@@ -1,0 +1,2 @@
+# FrontendManagementStudent
+MaivenPoint Assignment
