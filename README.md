@@ -14,7 +14,7 @@ my-app/
 │ │ ├── auth/
 │ │ │ ├── components/ # LoginForm, RegisterForm (sẽ viết)
 │ │ │ ├── context/
-│ │ │ │ └── AuthContext.jsx # AuthContext + AuthProvider (sẽ viết)
+│ │ │ │ └── AuthContext.jsx # AuthContext(đã viết) + AuthProvider (sẽ viết)
 │ │ │ ├── hooks/
 │ │ │ │ └── useAuth.js # bọc useContext (sẽ viết)
 │ │ │ ├── services/
