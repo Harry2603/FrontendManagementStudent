@@ -37,6 +37,6 @@ export const validateEmail = (value) => {
 
 export const validatePassword = (value) => {
   if (!value) return "Vui lòng nhập mật khẩu";
-  if (value.length < 8) return "Mật khẩu tối thiểu 8 ký tự";
+  if (value.length < 6) return "Mật khẩu tối thiểu 6 ký tự";
   return "";
 };

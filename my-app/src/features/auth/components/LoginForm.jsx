@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
+import { Eye, EyeOff } from "lucide-react";
 import { validateEmail, validatePassword } from "@/utils/validators";
 import { authService } from "../services/authService";
 import { useAuth } from "../hooks/useAuth";
@@ -10,10 +11,12 @@ const INITIAL_VALUES = { email: "", password: "" };
 export default function LoginForm() {
   const { setSession } = useAuth();
   const isAdmin = useLocation().pathname === "/admin/login";
+  const navigate = useNavigate();
 
   const [values, setValues] = useState(INITIAL_VALUES);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;
@@ -41,9 +44,8 @@ export default function LoginForm() {
         const session = await login({
           email: values.email.trim(),
           password: values.password,
-          role: values.role,
         });
-        console.log("inf login", session);
+        // console.log("inf login", session);
 
         // user đổi -> GuestRoute tự chuyển tới trang home theo role
         setSession(session);
@@ -100,16 +102,27 @@ export default function LoginForm() {
         >
           Mật khẩu
         </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          value={values.password}
-          onChange={handleChange}
-          aria-invalid={!!errors.password}
-          className="w-full rounded border border-gray-300 px-3 py-2 outline-none focus:border-blue-600"
-        />
+        <div className="relative">
+          <input
+            id="password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="current-password"
+            value={values.password}
+            onChange={handleChange}
+            aria-invalid={!!errors.password}
+            className="w-full rounded border border-gray-300 px-3 py-2 pr-10 outline-none focus:border-blue-600"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((visible) => !visible)}
+            aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+            title={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+            className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-gray-500 hover:text-gray-700"
+          >
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        </div>
         {errors.password && (
           <p className="mt-1 text-sm text-red-600">{errors.password}</p>
         )}
@@ -123,11 +136,36 @@ export default function LoginForm() {
         {loading ? "Đang đăng nhập..." : "Đăng nhập"}
       </button>
 
+      <button
+        type="button"
+        onClick={() => navigate(isAdmin ? "/login" : "/admin/login")}
+        className="w-full rounded border border-gray-300 py-2 font-medium text-gray-700 hover:bg-gray-50"
+      >
+        Back
+      </button>
+
       {!isAdmin && (
+        <>
+          <p className="text-center text-sm text-gray-600">
+            Chưa có tài khoản?{" "}
+            <Link to="/register" className="text-blue-600 hover:underline">
+              Đăng ký
+            </Link>
+          </p>
+          <p className="text-center text-sm text-gray-600">
+            Quản trị viên?{" "}
+            <Link to="/admin/login" className="text-blue-600 hover:underline">
+              Đăng nhập quản trị
+            </Link>
+          </p>
+        </>
+      )}
+
+      {isAdmin && (
         <p className="text-center text-sm text-gray-600">
-          Chưa có tài khoản?{" "}
-          <Link to="/register" className="text-blue-600 hover:underline">
-            Đăng ký
+          Người dùng thông thường?{" "}
+          <Link to="/login" className="text-blue-600 hover:underline">
+            Đăng nhập
           </Link>
         </p>
       )}
