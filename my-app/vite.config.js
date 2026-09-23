@@ -7,6 +7,10 @@ import path from "path";
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
-    alias: { "@": path.resolve(__dirname, "./src") },
+    alias: { "@": path.resolve(import.meta.dirname, "./src") },
+  },
+  server: {
+    port: 3000,
+    open: true, // Tự động mở trang web trên trình duyệt mặc định khi run dev
   },
 });

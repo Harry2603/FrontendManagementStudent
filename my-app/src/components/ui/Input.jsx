@@ -11,6 +11,7 @@ function InputBase({
   error,
   onChange,
   autoComplete,
+  lang,
   max,
   disabled = false,
 }) {
@@ -29,6 +30,7 @@ function InputBase({
         value={value ?? ""}
         onChange={onChange}
         autoComplete={autoComplete}
+        lang={lang}
         max={max}
         disabled={disabled}
         aria-invalid={!!error}

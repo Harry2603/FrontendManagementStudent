@@ -10,6 +10,7 @@ const ProfilePage = lazy(() => import("@/pages/Profile"));
 const UsersPage = lazy(() => import("@/pages/Users"));
 const SettingsPage = lazy(() => import("@/pages/Settings"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
+const AccountsPage = lazy(() => import("@/pages/Accounts"));
 
 export const routeConfig = [
   { path: "/login", Component: Login, access: "guest" },
@@ -51,7 +52,16 @@ export const routeConfig = [
       icon: Users,
     },
   },
-
+  {
+    path: "/accounts",
+    Component: AccountsPage,
+    access: "private",
+    roles: [ROLES.ADMIN, ROLES.TEACHER],
+    menu: {
+      label: "Accounts",
+      icon: Users,
+    },
+  },
   {
     path: "/settings",
     Component: SettingsPage,
