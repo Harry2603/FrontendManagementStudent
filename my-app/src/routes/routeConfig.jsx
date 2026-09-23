@@ -1,16 +1,15 @@
-import { lazy } from "react";
 import { Home, Users, Settings, User } from "lucide-react";
 import { ROLES } from "@/config/constants";
-
-// Lazy load: mỗi page thành 1 chunk riêng
-const Login = lazy(() => import("@/pages/Login"));
-const Register = lazy(() => import("@/pages/Register"));
-const HomePage = lazy(() => import("@/pages/HomePage"));
-const ProfilePage = lazy(() => import("@/pages/Profile"));
-const UsersPage = lazy(() => import("@/pages/Users"));
-const SettingsPage = lazy(() => import("@/pages/Settings"));
-const NotFound = lazy(() => import("@/pages/NotFound"));
-const AccountsPage = lazy(() => import("@/pages/Accounts"));
+import {
+  Login,
+  Register,
+  HomePage,
+  ProfilePage,
+  UsersPage,
+  SettingsPage,
+  NotFound,
+  AccountsPage,
+} from "@/routes/routeComponents";
 
 export const routeConfig = [
   { path: "/login", Component: Login, access: "guest" },
