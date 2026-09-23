@@ -30,6 +30,7 @@ export default function EnrollmentPage() {
   const [selectedSectionIds, setSelectedSectionIds] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [enrollmentResult, setEnrollmentResult] = useState(null);
+  const [enrolledCourses, setEnrolledCourses] = useState([]);
   const tabs = [
     { id: "available", label: "Đăng ký học phần", icon: BookOpen },
     { id: "enrolled", label: "Môn học đã đăng ký", icon: Check },
@@ -42,9 +43,15 @@ export default function EnrollmentPage() {
       setPageLoading(true);
       setPageError("");
       try {
-        const response = await courseSectionService.getOpenSections();
+        const response = await (activeTab === "available"
+          ? courseSectionService.getOpenSections()
+          : courseSectionService.getMySections());
+        console.log("response", response);
         if (!ignore) {
-          setAvailableCourses((response?.items ?? []).map(formatSection));
+          const isActiveTab = activeTab;
+          if (isActiveTab === "available") {
+            setAvailableCourses((response?.items ?? []).map(formatSection));
+          } else setEnrolledCourses((response?.items ?? []).map(formatSection));
         }
       } catch (error) {
         if (!ignore) {
@@ -62,9 +69,10 @@ export default function EnrollmentPage() {
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [activeTab]);
 
-  const courses = activeTab === "available" ? availableCourses : [];
+  const courses =
+    activeTab === "available" ? availableCourses : enrolledCourses;
   const toggleSection = (sectionId) => {
     setSelectedSectionIds((currentIds) =>
       currentIds.includes(sectionId)
@@ -92,8 +100,10 @@ export default function EnrollmentPage() {
       setSubmitting(false);
     }
   };
-
-  const columns = [
+  const codeBySectionId = Object.fromEntries(
+    availableCourses.map((course) => [course.sectionId, course.code]),
+  );
+  const basecolumns = [
     {
       key: "code",
       header: "Mã lớp học phần",
@@ -105,27 +115,22 @@ export default function EnrollmentPage() {
     { key: "name", header: "Môn học", sortable: true },
     { key: "capacity", header: "Sĩ số tối đa", sortable: true },
     { key: "schedule", header: "Lịch học" },
+  ];
+  const availableColumns = [
+    ...basecolumns,
     {
       key: "action",
       header: "Chọn",
-      render: (course) =>
-        activeTab === "available" ? (
-          <input
-            type="checkbox"
-            checked={selectedSectionIds.includes(course.sectionId)}
-            onChange={() => toggleSection(course.sectionId)}
-            aria-label={`Chọn học phần ${course.code}`}
-            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
-          />
-        ) : (
-          <span className="inline-flex items-center gap-1.5 font-medium text-emerald-600">
-            <Check size={17} />
-            Đã đăng ký
-          </span>
-        ),
+      render: (course) => (
+        <input
+          type="checkbox"
+          checked={selectedSectionIds.includes(course.sectionId)}
+          onChange={() => toggleSection(course.sectionId)}
+        />
+      ),
     },
   ];
-
+  const columns = activeTab === "available" ? availableColumns : basecolumns;
   if (pageLoading) return <PageLoader />;
 
   if (pageError) {
@@ -208,7 +213,9 @@ export default function EnrollmentPage() {
               disabled={selectedSectionIds.length === 0 || submitting}
               className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {submitting && <LoaderCircle size={16} className="animate-spin" />}
+              {submitting && (
+                <LoaderCircle size={16} className="animate-spin" />
+              )}
               Đăng ký
             </button>
           </div>
@@ -226,73 +233,66 @@ export default function EnrollmentPage() {
 
       {enrollmentResult && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm"
           role="presentation"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) setEnrollmentResult(null);
           }}
         >
           <div
-            className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl"
+            className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-100"
             role="dialog"
             aria-modal="true"
             aria-labelledby="enrollment-result-title"
           >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 id="enrollment-result-title" className="text-xl font-bold text-slate-900">
-                  Kết quả đăng ký
-                </h2>
-                {enrollmentResult.error ? (
-                  <p className="mt-2 text-sm text-red-600">{enrollmentResult.error}</p>
-                ) : (
-                  <p className="mt-2 text-sm text-slate-600">
-                    Thành công: {enrollmentResult.successCount ?? 0} · Thất bại: {enrollmentResult.failedCount ?? 0}
-                  </p>
-                )}
-              </div>
+            <div className="flex items-center justify-between px-6 py-5">
+              <h2
+                id="enrollment-result-title"
+                className="text-lg font-semibold text-slate-900"
+              >
+                Kết quả đăng ký
+              </h2>
               <button
                 type="button"
                 onClick={() => setEnrollmentResult(null)}
-                aria-label="Đóng kết quả đăng ký"
-                className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                aria-label="Đóng"
+                className="rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
               >
                 <X size={20} />
               </button>
             </div>
 
-            {enrollmentResult.results?.length > 0 && (
-              <div className="mt-5 space-y-3">
-                {enrollmentResult.results.map((result, index) => {
+            {enrollmentResult.error ? (
+              <p className="border-t border-slate-100 px-6 py-5 text-base text-red-600">
+                Đăng ký thất bại
+              </p>
+            ) : (
+              <ul className="max-h-[65vh] divide-y divide-slate-100 overflow-y-auto border-t border-slate-100">
+                {(enrollmentResult.results ?? []).map((result, index) => {
                   const isSuccess = result.status?.toLowerCase() === "success";
                   return (
-                    <div
+                    <li
                       key={`${result.sectionId}-${index}`}
-                      className={`rounded-lg border p-4 ${
-                        isSuccess
-                          ? "border-emerald-200 bg-emerald-50"
-                          : "border-red-200 bg-red-50"
-                      }`}
+                      className="flex items-center justify-between px-6 py-4"
                     >
-                      <p className={`font-semibold ${isSuccess ? "text-emerald-700" : "text-red-700"}`}>
-                        Học phần {result.sectionId}: {isSuccess ? "Đăng ký thành công" : "Đăng ký thất bại"}
-                      </p>
-                      {!isSuccess && result.reason && (
-                        <p className="mt-1 text-sm text-red-600">{result.reason}</p>
-                      )}
-                    </div>
+                      <span className="text-base font-medium text-slate-800">
+                        {codeBySectionId[result.sectionId] ?? result.sectionId}
+                      </span>
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ${
+                          isSuccess
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "bg-red-50 text-red-600"
+                        }`}
+                      >
+                        {isSuccess ? <Check size={15} /> : <X size={15} />}
+                        {isSuccess ? "Thành công" : "Thất bại"}
+                      </span>
+                    </li>
                   );
                 })}
-              </div>
+              </ul>
             )}
-
-            <button
-              type="button"
-              onClick={() => setEnrollmentResult(null)}
-              className="mt-6 w-full rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
-            >
-              Đóng
-            </button>
           </div>
         </div>
       )}
