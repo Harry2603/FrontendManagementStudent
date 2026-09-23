@@ -50,3 +50,4 @@ my-app/
 ├── jsconfig.json # alias @ -> src
 ├── tailwind.config.js
 └── vite.config.js # alias @ -> src
+Hello Việt
