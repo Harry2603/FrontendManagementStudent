@@ -129,7 +129,7 @@ export default function Profile() {
     <form
       onSubmit={handleSubmit}
       noValidate
-      className="w-full max-w-md space-y-4 rounded-xl bg-white p-8 shadow"
+      className="mx-auto w-full max-w-md space-y-4 rounded-xl bg-white p-8 shadow"
     >
       <h1 className="text-2xl font-semibold text-gray-900">
         Thông tin cá nhân
