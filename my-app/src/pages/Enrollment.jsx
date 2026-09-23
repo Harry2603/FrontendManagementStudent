@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BookOpen, Check, LoaderCircle, X } from "lucide-react";
+import { BookOpen, Check, LoaderCircle, X, Search } from "lucide-react";
 import { Table } from "@/components/ui/Table";
 import PageLoader from "@/components/common/PageLoader";
 import { courseSectionService } from "@/features/enrollment/services/courseSectionService";
@@ -35,23 +35,34 @@ export default function EnrollmentPage() {
     { id: "available", label: "Đăng ký học phần", icon: BookOpen },
     { id: "enrolled", label: "Môn học đã đăng ký", icon: Check },
   ];
+  const [searchTerm, setSearchTerm] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
+  const normalize = (text) =>
+    String(text ?? "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/Đ/g, "D")
+      .toLowerCase();
 
+  const sourceCourses =
+    activeTab === "available" ? availableCourses : enrolledCourses;
+
+  const keyword = normalize(searchTerm.trim());
   useEffect(() => {
     let ignore = false;
 
-    async function fetchOpenSections() {
-      setPageLoading(true);
+    async function fetchSections() {
+      if (refreshKey === 0) setPageLoading(true); // chỉ hiện loader toàn trang lần đầu
       setPageError("");
       try {
-        const response = await (activeTab === "available"
-          ? courseSectionService.getOpenSections()
-          : courseSectionService.getMySections());
-        console.log("response", response);
+        const [openRes, myRes] = await Promise.all([
+          courseSectionService.getOpenSections(),
+          courseSectionService.getMySections(),
+        ]);
         if (!ignore) {
-          const isActiveTab = activeTab;
-          if (isActiveTab === "available") {
-            setAvailableCourses((response?.items ?? []).map(formatSection));
-          } else setEnrolledCourses((response?.items ?? []).map(formatSection));
+          setAvailableCourses((openRes?.items ?? []).map(formatSection));
+          setEnrolledCourses((myRes?.items ?? []).map(formatSection));
         }
       } catch (error) {
         if (!ignore) {
@@ -65,14 +76,18 @@ export default function EnrollmentPage() {
       }
     }
 
-    fetchOpenSections();
+    fetchSections();
     return () => {
       ignore = true;
     };
-  }, [activeTab]);
-
-  const courses =
-    activeTab === "available" ? availableCourses : enrolledCourses;
+  }, [refreshKey]);
+  const courses = keyword
+    ? sourceCourses.filter((course) =>
+        [course.code, course.name, course.schedule].some((value) =>
+          normalize(value).includes(keyword),
+        ),
+      )
+    : sourceCourses;
   const toggleSection = (sectionId) => {
     setSelectedSectionIds((currentIds) =>
       currentIds.includes(sectionId)
@@ -90,6 +105,8 @@ export default function EnrollmentPage() {
         enrollments: selectedSectionIds.map((sectionId) => ({ sectionId })),
       });
       setEnrollmentResult(response);
+      setSelectedSectionIds([]);
+      setRefreshKey((key) => key + 1);
     } catch (error) {
       setEnrollmentResult({
         error:
@@ -116,20 +133,30 @@ export default function EnrollmentPage() {
     { key: "capacity", header: "Sĩ số tối đa", sortable: true },
     { key: "schedule", header: "Lịch học" },
   ];
+  const enrolledSectionIds = new Set(
+    enrolledCourses.map((course) => course.sectionId),
+  );
   const availableColumns = [
     ...basecolumns,
     {
       key: "action",
       header: "Đăng ký",
-      render: (course) => (
-        <input
-          type="checkbox"
-          checked={selectedSectionIds.includes(course.sectionId)}
-          onChange={() => toggleSection(course.sectionId)}
-          aria-label={`Chọn học phần ${course.code}`}
-          className="h-5 w-5 cursor-pointer rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
-        />
-      ),
+      render: (course) => {
+        const isEnrolled = enrolledSectionIds.has(course.sectionId);
+        return (
+          <input
+            type="checkbox"
+            checked={
+              isEnrolled || selectedSectionIds.includes(course.sectionId)
+            }
+            disabled={isEnrolled}
+            onChange={() => toggleSection(course.sectionId)}
+            aria-label={`Chọn học phần ${course.code}`}
+            title={isEnrolled ? "Bạn đã đăng ký học phần này" : undefined}
+            className="h-5 w-5 cursor-pointer rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50"
+          />
+        );
+      },
     },
   ];
   const columns = activeTab === "available" ? availableColumns : basecolumns;
@@ -221,7 +248,32 @@ export default function EnrollmentPage() {
             </button>
           </div>
         </div>
-
+        <div className="border-b border-slate-200 px-5 py-3">
+          <div className="relative">
+            <Search
+              size={18}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Tìm theo mã lớp, môn học, lịch học..."
+              aria-label="Tìm kiếm học phần"
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-10 pr-9 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm("")}
+                aria-label="Xóa tìm kiếm"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+        </div>
         <div role="tabpanel">
           <Table
             columns={columns}
