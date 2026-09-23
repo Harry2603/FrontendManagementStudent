@@ -12,7 +12,6 @@ export default function LoginForm() {
   const { setSession } = useAuth();
   const isAdmin = useLocation().pathname === "/admin/login";
   const navigate = useNavigate();
-
   const [values, setValues] = useState(INITIAL_VALUES);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -118,7 +117,7 @@ export default function LoginForm() {
             onClick={() => setShowPassword((visible) => !visible)}
             aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
             title={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-            className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-gray-500 hover:text-gray-700"
+            className="absolute inset-y-0 right-0 flex w-10 item-center justify-center top-2.5 text-gray-500 hover:text-gray-700"
           >
             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
@@ -135,7 +134,6 @@ export default function LoginForm() {
       >
         {loading ? "Đang đăng nhập..." : "Đăng nhập"}
       </button>
-
       <button
         type="button"
         onClick={() => navigate(isAdmin ? "/login" : "/admin/login")}

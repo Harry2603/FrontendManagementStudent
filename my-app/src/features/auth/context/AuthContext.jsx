@@ -1,14 +1,7 @@
-import {
-  createContext,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { authStorage } from "@/utils/authStorage";
 import { setUnauthorizedHandler } from "@/services/axiosClient";
-
-export const AuthContext = createContext(null);
+import { AuthContext } from "./AuthContextValue";
 
 // Chạy 1 lần lúc mount: khôi phục phiên nếu token còn hạn.
 const restoreUser = () => {

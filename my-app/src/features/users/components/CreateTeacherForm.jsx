@@ -8,7 +8,7 @@ import {
   validatePhone,
   validateRequired,
 } from "@/utils/validators";
-import { userService } from "../services/userService";
+import { userService } from "../services/useService";
 import { getCreateTeacherError } from "../utils/userErrors";
 
 const DEFAULT_AVATAR_URL =
