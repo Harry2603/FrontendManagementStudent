@@ -76,7 +76,7 @@ export const routeConfig = [
     path: "/enrollment",
     Component: EnrollmentPage,
     access: "private",
-    roles: [ROLES.STUDENT, ROLES.TEACHER],
+    roles: [ROLES.STUDENT],
     menu: { label: "Enrollment", icon: Settings },
   },
 
