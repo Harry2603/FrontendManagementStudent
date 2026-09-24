@@ -8,3 +8,6 @@ export const UsersPage = lazy(() => import("@/pages/Users"));
 export const SettingsPage = lazy(() => import("@/pages/Settings"));
 export const NotFound = lazy(() => import("@/pages/NotFound"));
 export const AccountsPage = lazy(() => import("@/pages/Accounts"));
+export const TeacherCourseSectionPage = lazy(
+  () => import("@/pages/TeacherCourseSection"),
+);

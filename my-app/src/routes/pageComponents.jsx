@@ -9,3 +9,6 @@ export const SettingsPage = lazy(() => import("@/pages/Settings"));
 export const NotFound = lazy(() => import("@/pages/NotFound"));
 export const AccountsPage = lazy(() => import("@/pages/Accounts"));
 export const EnrollmentPage = lazy(() => import("@/pages/Enrollment"));
+export const TeacherCourseSectionPage = lazy(
+  () => import("@/pages/TeacherCourseSection"),
+);

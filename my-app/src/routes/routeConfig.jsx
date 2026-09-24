@@ -1,4 +1,4 @@
-import { Home, Users, Settings, User } from "lucide-react";
+import { BookOpen, Home, Users, Settings, User } from "lucide-react";
 import { ROLES } from "@/config/constants";
 import {
   Login,
@@ -9,8 +9,8 @@ import {
   SettingsPage,
   NotFound,
   AccountsPage,
-  EnrollmentPage,
-} from "./pageComponents";
+  TeacherCourseSectionPage,
+} from "@/routes/routeComponents";
 
 export const routeConfig = [
   { path: "/login", Component: Login, access: "guest" },
@@ -23,7 +23,7 @@ export const routeConfig = [
     path: "/",
     Component: HomePage,
     access: "private",
-    roles: [ROLES.STUDENT, ROLES.TEACHER, ROLES.ADMIN],
+    roles: [ROLES.STUDENT, ROLES.TEACHER],
     menu: {
       label: "Trang chủ",
       icon: Home,
@@ -63,6 +63,16 @@ export const routeConfig = [
     },
   },
   {
+    path: "/teacher-course-sections",
+    Component: TeacherCourseSectionPage,
+    access: "private",
+    roles: [ROLES.TEACHER],
+    menu: {
+      label: "Lớp học của tôi",
+      icon: BookOpen,
+    },
+  },
+  {
     path: "/settings",
     Component: SettingsPage,
     access: "private",
@@ -71,13 +81,6 @@ export const routeConfig = [
       label: "Settings",
       icon: Settings,
     },
-  },
-  {
-    path: "/enrollment",
-    Component: EnrollmentPage,
-    access: "private",
-    roles: [ROLES.STUDENT, ROLES.TEACHER],
-    menu: { label: "Enrollment", icon: Settings },
   },
 
   {

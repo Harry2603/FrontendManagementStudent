@@ -1,6 +1,6 @@
 // src/components/ui/Table/Table.jsx
 import { memo, useEffect } from "react";
-import { useTable } from "@/hooks/useTable";
+import { useTable } from "./useTable";
 
 function SortIcon({ direction }) {
   return (
@@ -26,12 +26,17 @@ function SortIcon({ direction }) {
 const TableRow = memo(function TableRow({
   row,
   columns,
+  rowKey,
   selectable,
   isSelected,
   onToggleRow,
+  onRowClick,
 }) {
   return (
-    <tr className="border-b border-gray-100 hover:bg-gray-50">
+    <tr
+      onClick={() => onRowClick?.(row)}
+      className={`border-b border-gray-100 hover:bg-gray-50 ${onRowClick ? "cursor-pointer" : ""}`}
+    >
       {selectable && (
         <td className="w-10 px-4 py-3">
           <input
@@ -60,6 +65,7 @@ export default function Table({
   rowKey = (row) => row.id,
   selectable = false,
   onSelectionChange,
+  onRowClick,
   emptyMessage = "Không có dữ liệu",
 }) {
   const {
@@ -139,9 +145,11 @@ export default function Table({
                 key={rowKey(row)}
                 row={row}
                 columns={columns}
+                rowKey={rowKey}
                 selectable={selectable}
                 isSelected={isRowSelected(row)}
                 onToggleRow={toggleRow}
+                onRowClick={onRowClick}
               />
             ))
           )}
