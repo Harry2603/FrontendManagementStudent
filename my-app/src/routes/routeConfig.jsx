@@ -9,7 +9,8 @@ import {
   SettingsPage,
   NotFound,
   AccountsPage,
-} from "@/routes/routeComponents";
+  EnrollmentPage,
+} from "./pageComponents";
 
 export const routeConfig = [
   { path: "/login", Component: Login, access: "guest" },
@@ -70,6 +71,13 @@ export const routeConfig = [
       label: "Settings",
       icon: Settings,
     },
+  },
+  {
+    path: "/enrollment",
+    Component: EnrollmentPage,
+    access: "private",
+    roles: [ROLES.STUDENT, ROLES.TEACHER],
+    menu: { label: "Enrollment", icon: Settings },
   },
 
   {
