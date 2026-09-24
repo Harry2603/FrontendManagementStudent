@@ -18,6 +18,7 @@ export default function AnnouncementList({
   error,
   onNextPage,
   onPrevPage,
+  onSelect,
 }) {
   if (error) {
     return (
@@ -42,16 +43,22 @@ export default function AnnouncementList({
               key={item.id}
               className="border-b border-gray-100 pb-3 last:border-0"
             >
-              <div className="flex items-center justify-between">
-                <h3 className="font-medium text-gray-900">{item.title}</h3>
-                <CreatorBadge role={item.user?.role} />
-              </div>
-              <p className="mt-1 text-sm text-gray-600">{item.content}</p>
-              <div className="mt-1 flex items-center gap-2 text-xs text-gray-400">
-                <span>{item.user?.fullName ?? "Ẩn danh"}</span>
-                <span>•</span>
-                <span>{formatDate(item.createdAt)}</span>
-              </div>
+              <button
+                type="button"
+                onClick={() => onSelect(item)}
+                className="block w-full text-left hover:bg-gray-50"
+              >
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium text-gray-900">{item.title}</h3>
+                  <CreatorBadge role={item.user?.role} />
+                </div>
+                <p className="mt-1 text-sm text-gray-600">{item.content}</p>
+                <div className="mt-1 flex items-center gap-2 text-xs text-gray-400">
+                  <span>{item.user?.fullName ?? "Ẩn danh"}</span>
+                  <span>•</span>
+                  <span>{formatDate(item.createdAt)}</span>
+                </div>
+              </button>
             </li>
           ))}
         </ul>

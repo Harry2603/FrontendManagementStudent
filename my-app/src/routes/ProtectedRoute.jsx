@@ -1,6 +1,5 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/features/auth";
-import { HOME_PATH_BY_ROLE } from "@/config/constants";
 
 // Chỉ cho người ĐÃ đăng nhập (và đúng role nếu có `roles`)
 export function ProtectedRoute({ roles }) {
@@ -12,7 +11,7 @@ export function ProtectedRoute({ roles }) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
   if (roles && !roles.includes(user.role)) {
-    return <Navigate to={HOME_PATH_BY_ROLE[user.role] ?? "/login"} replace />;
+    return <Navigate to="/" replace />;
   }
   return <Outlet />;
 }
@@ -22,7 +21,7 @@ export function GuestRoute() {
   const { user } = useAuth();
 
   if (user) {
-    return <Navigate to={HOME_PATH_BY_ROLE[user.role] ?? "/"} replace />;
+    return <Navigate to="/" replace />;
   }
   return <Outlet />;
 }
