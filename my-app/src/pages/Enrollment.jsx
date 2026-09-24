@@ -180,7 +180,7 @@ export default function EnrollmentPage() {
   }
 
   return (
-    <section className="mx-auto max-w-5xl space-y-6">
+    <section className="w-full space-y-6">
       <div>
         <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">
           Học tập
