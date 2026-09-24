@@ -10,6 +10,7 @@ import { useAuth } from "@/features/auth/hooks/useAuth";
 // Tạo 1 lần ở module scope vì không phụ thuộc props/state của Accounts
 // -> tránh Table nhận "columns" object mới mỗi render (đỡ re-render thừa).
 const COLUMNS = buildAccountColumns();
+const PAGE_SIZE = 10;
 
 export default function Accounts() {
   const { user } = useAuth();
@@ -21,38 +22,49 @@ export default function Accounts() {
   const [sectionOptions, setSectionOptions] = useState([]);
 
   const [users, setUsers] = useState([]);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const canSeeTeacherTab = role === "ADMIN";
+  const activeTab = canSeeTeacherTab || tab !== "TEACHER" ? tab : "STUDENT";
 
-  // Teacher không được phép ở tab TEACHER -> ép về STUDENT nếu role thay đổi
-  useEffect(() => {
-    if (!canSeeTeacherTab && tab === "TEACHER") setTab("STUDENT");
-  }, [canSeeTeacherTab, tab]);
+  const handleTabChange = (nextTab) => {
+    setTab(nextTab);
+    setPageNumber(1);
+  };
 
-  // Load toàn bộ user 1 lần, search/sort xử lý client-side (đã chốt)
+  // Load users theo role và trang hiện tại; search/sort xử lý client-side.
   useEffect(() => {
     let ignore = false;
-    setLoading(true);
-    setError("");
 
-    userService
-      .getAllUsers()
-      .then((res) => {
-        if (!ignore) setUsers(res.items ?? []);
-      })
-      .catch(() => {
-        if (!ignore) setError("Không tải được danh sách user.");
-      })
-      .finally(() => {
-        if (!ignore) setLoading(false);
-      });
+    queueMicrotask(() => {
+      if (ignore) return;
+      setLoading(true);
+      setError("");
+
+      userService
+        .getAllUsers({ role: activeTab, pageNumber, pageSize: PAGE_SIZE })
+        .then((res) => {
+          if (!ignore) {
+            setUsers(res.items ?? []);
+            setPageNumber(res.pageNumber ?? pageNumber);
+            setTotalPages(res.totalPages ?? 1);
+          }
+        })
+        .catch(() => {
+          if (!ignore) setError("Không tải được danh sách user.");
+        })
+        .finally(() => {
+          if (!ignore) setLoading(false);
+        });
+    });
 
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [activeTab, pageNumber]);
 
   // Section dropdown: chỉ Teacher có data thật (API đã có).
   // Admin: chờ API riêng -> giữ nguyên "Tất cả section" (xem SectionFilter.jsx).
@@ -81,14 +93,14 @@ export default function Accounts() {
     const keyword = search.trim().toLowerCase();
 
     return users.filter((u) => {
-      if (u.role !== tab) return false;
+      if (u.role !== activeTab) return false;
       if (!keyword) return true;
       return (
         u.fullName.toLowerCase().includes(keyword) ||
         u.email.toLowerCase().includes(keyword)
       );
     });
-  }, [users, tab, search]);
+  }, [users, activeTab, search]);
 
   return (
     <div className="space-y-4">
@@ -98,8 +110,8 @@ export default function Accounts() {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <RoleTabs
-          value={tab}
-          onChange={setTab}
+          value={activeTab}
+          onChange={handleTabChange}
           canSeeTeacherTab={canSeeTeacherTab}
         />
 
@@ -111,15 +123,6 @@ export default function Accounts() {
             onChange={(e) => setSearch(e.target.value)}
             className="rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-600"
           />
-
-          {tab === "STUDENT" && (
-            <SectionFilter
-              value={section}
-              onChange={setSection}
-              options={sectionOptions}
-              disabled={role === "ADMIN"}
-            />
-          )}
         </div>
       </div>
 
@@ -133,6 +136,30 @@ export default function Accounts() {
           data={filteredUsers}
           rowKey={(row) => row.id}
         />
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between text-sm">
+          <button
+            type="button"
+            onClick={() => setPageNumber((page) => page - 1)}
+            disabled={pageNumber <= 1 || loading}
+            className="rounded border border-gray-300 px-3 py-1 disabled:opacity-40"
+          >
+            Trước
+          </button>
+          <span className="text-gray-500">
+            Trang {pageNumber}/{totalPages}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPageNumber((page) => page + 1)}
+            disabled={pageNumber >= totalPages || loading}
+            className="rounded border border-gray-300 px-3 py-1 disabled:opacity-40"
+          >
+            Sau
+          </button>
+        </div>
       )}
     </div>
   );
