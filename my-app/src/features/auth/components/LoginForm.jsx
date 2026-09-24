@@ -5,6 +5,7 @@ import { validateEmail, validatePassword } from "@/utils/validators";
 import { authService } from "../services/authService";
 import { useAuth } from "../hooks/useAuth";
 import { getLoginError } from "../utils/authErrors";
+import animatedArtwork from "@/assets/svgviewer-output.svg";
 
 const INITIAL_VALUES = { email: "", password: "" };
 
@@ -173,12 +174,14 @@ export default function LoginForm() {
         )}
       </form>
       <div
-        className="order-1 flex min-h-56 items-center justify-center border-b border-slate-200 bg-slate-50 p-8 md:order-2 md:min-h-full md:border-b-0 md:border-l"
+        className="order-1 min-h-56 overflow-hidden border-b border-slate-200 bg-slate-50 md:order-2 md:min-h-full md:border-b-0 md:border-l"
         aria-label="Khung ảnh động đăng nhập"
       >
-        <div className="flex aspect-square w-full max-w-xs items-center justify-center rounded-xl border-2 border-dashed border-slate-300 text-center text-sm text-slate-400">
-          Khu vực ảnh động
-        </div>
+        <img
+          src={animatedArtwork}
+          alt="Ảnh minh họa đăng nhập"
+          className="block h-full min-h-56 w-full object-cover"
+        />
       </div>
     </div>
   );
