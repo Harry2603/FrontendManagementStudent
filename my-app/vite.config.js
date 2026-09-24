@@ -9,8 +9,8 @@ export default defineConfig({
   resolve: {
     alias: { "@": path.resolve(import.meta.dirname, "./src") },
   },
-  server: {
-    port: 3000,
-    open: true, // Tự động mở trang web trên trình duyệt mặc định khi run dev
-  },
+  // server: {
+  //   port: 5713,
+  //   open: true, // Tự động mở trang web trên trình duyệt mặc định khi run dev
+  // },
 });

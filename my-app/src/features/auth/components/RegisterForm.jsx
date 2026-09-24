@@ -1,5 +1,6 @@
 import { memo, useCallback, useState } from "react";
 import { Link } from "react-router";
+import { Eye, EyeOff } from "lucide-react";
 import {
   validateConfirmPassword,
   validateDateOfBirth,
@@ -45,6 +46,8 @@ const Field = memo(function Field({
   options,
   max,
 }) {
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
     <div>
       <label
@@ -70,17 +73,30 @@ const Field = memo(function Field({
           ))}
         </select>
       ) : (
-        <input
-          id={name}
-          name={name}
-          type={type}
-          value={value}
-          onChange={onChange}
-          autoComplete={autoComplete}
-          max={max}
-          aria-invalid={!!error}
-          className={INPUT_CLASS}
-        />
+        <div className="relative">
+          <input
+            id={name}
+            name={name}
+            type={type === "password" && showPassword ? "text" : type}
+            value={value}
+            onChange={onChange}
+            autoComplete={autoComplete}
+            max={max}
+            aria-invalid={!!error}
+            className={`${INPUT_CLASS}${type === "password" ? " pr-10" : ""}`}
+          />
+          {type === "password" && (
+            <button
+              type="button"
+              onClick={() => setShowPassword((visible) => !visible)}
+              aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+              title={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+              className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-gray-500 hover:text-gray-700"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          )}
+        </div>
       )}
       {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
     </div>

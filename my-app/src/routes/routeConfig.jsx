@@ -22,7 +22,7 @@ export const routeConfig = [
     path: "/",
     Component: HomePage,
     access: "private",
-    roles: [ROLES.STUDENT, ROLES.TEACHER],
+    roles: [ROLES.STUDENT, ROLES.TEACHER, ROLES.ADMIN],
     menu: {
       label: "Trang chủ",
       icon: Home,
