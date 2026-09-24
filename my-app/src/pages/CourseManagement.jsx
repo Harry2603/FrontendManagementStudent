@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -44,6 +45,11 @@ const initialSection = {
 const getErrorMessage = (error, fallback) =>
   error?.response?.data?.detail || fallback;
 
+const getPageFromParams = (value) => {
+  const page = Number(value);
+  return Number.isInteger(page) && page > 0 ? page : 1;
+};
+
 function Modal({ title, onClose, children }) {
   return (
     <div
@@ -79,8 +85,9 @@ function Modal({ title, onClose, children }) {
 }
 
 export default function CourseManagement() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [courses, setCourses] = useState([]);
-  const [pageNumber, setPageNumber] = useState(1);
+  const pageNumber = getPageFromParams(searchParams.get("page"));
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [pageLoading, setPageLoading] = useState(true);
@@ -92,6 +99,9 @@ export default function CourseManagement() {
   const [successMessage, setSuccessMessage] = useState("");
   const [viewedCourse, setViewedCourse] = useState(null);
   const [courseSections, setCourseSections] = useState([]);
+  const sectionsPageNumber = getPageFromParams(searchParams.get("sectionPage"));
+  const [sectionsTotalPages, setSectionsTotalPages] = useState(1);
+  const [sectionsTotalItems, setSectionsTotalItems] = useState(0);
   const [sectionsLoading, setSectionsLoading] = useState(false);
   const [sectionsError, setSectionsError] = useState("");
   const [sectionModalOpen, setSectionModalOpen] = useState(false);
@@ -103,6 +113,12 @@ export default function CourseManagement() {
   const [sectionSubmitting, setSectionSubmitting] = useState(false);
   const [sectionError, setSectionError] = useState("");
   const [sectionRefreshKey, setSectionRefreshKey] = useState(0);
+
+  const updatePageParam = useCallback((name, page) => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set(name, String(page));
+    setSearchParams(nextParams);
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     let ignore = false;
@@ -140,44 +156,45 @@ export default function CourseManagement() {
       setSectionsError("");
       try {
         const [firstSectionPage, firstTeacherPage] = await Promise.all([
-          courseManagementService.getCourseSections({ courseId: viewedCourse.id }),
+          courseManagementService.getCourseSections({
+            courseId: viewedCourse.id,
+            pageNumber: sectionsPageNumber,
+            pageSize: 10,
+          }),
           courseManagementService.getTeachers({ pageSize: 100 }),
         ]);
-        const [remainingSectionPages, remainingTeacherPages] = await Promise.all([
-          Promise.all(
-            Array.from(
-              { length: Math.max((firstSectionPage?.totalPages ?? 1) - 1, 0) },
-              (_, index) =>
-                courseManagementService.getCourseSections({
-                  courseId: viewedCourse.id,
-                  pageNumber: index + 2,
-                }),
-            ),
+        const remainingTeacherPages = await Promise.all(
+          Array.from(
+            { length: Math.max((firstTeacherPage?.totalPages ?? 1) - 1, 0) },
+            (_, index) =>
+              courseManagementService.getTeachers({
+                pageNumber: index + 2,
+                pageSize: 100,
+              }),
           ),
-          Promise.all(
-            Array.from(
-              { length: Math.max((firstTeacherPage?.totalPages ?? 1) - 1, 0) },
-              (_, index) =>
-                courseManagementService.getTeachers({
-                  pageNumber: index + 2,
-                  pageSize: 100,
-                }),
-            ),
-          ),
-        ]);
+        );
         const teachersByRoleId = new Map(
           [firstTeacherPage, ...remainingTeacherPages]
             .flatMap((page) => page?.items ?? [])
             .map((teacher) => [teacher.roleUserId, teacher]),
         );
-        const sections = [firstSectionPage, ...remainingSectionPages]
-          .flatMap((page) => page?.items ?? [])
+        const sections = (firstSectionPage?.items ?? [])
           .map((item) => ({
             ...item,
             teacher: teachersByRoleId.get(item.teacherUserRoleId),
           }));
 
-        if (!ignore) setCourseSections(sections);
+        if (!ignore) {
+          setCourseSections(sections);
+          if (
+            firstSectionPage?.pageNumber &&
+            firstSectionPage.pageNumber !== sectionsPageNumber
+          ) {
+            updatePageParam("sectionPage", firstSectionPage.pageNumber);
+          }
+          setSectionsTotalPages(firstSectionPage?.totalPages ?? 1);
+          setSectionsTotalItems(firstSectionPage?.totalItems ?? 0);
+        }
       } catch (error) {
         if (!ignore) {
           setSectionsError(getErrorMessage(error, "Unable to load course sections."));
@@ -191,7 +208,7 @@ export default function CourseManagement() {
     return () => {
       ignore = true;
     };
-  }, [viewedCourse, sectionRefreshKey]);
+  }, [viewedCourse, sectionsPageNumber, sectionRefreshKey]);
 
   useEffect(() => {
     if (!sectionModalOpen) return undefined;
@@ -271,6 +288,7 @@ export default function CourseManagement() {
 
   const openSectionModal = () => {
     setSection({ ...initialSection, sectionCode: `${viewedCourse.courseCode}-01` });
+    updatePageParam("sectionPage", 1);
     setTeacherSearch("");
     setSectionError("");
     setSectionModalOpen(true);
@@ -325,6 +343,7 @@ export default function CourseManagement() {
       setSuccessMessage(`Section ${created.sectionCode} was created and is open for enrollment.`);
       setSectionModalOpen(false);
       setSection(initialSection);
+      updatePageParam("sectionPage", 1);
       setSectionRefreshKey((key) => key + 1);
     } catch (error) {
       setSectionError(getErrorMessage(error, "Unable to create the course section."));
@@ -476,6 +495,29 @@ export default function CourseManagement() {
               </table>
             </div>
           )}
+          {sectionsTotalPages > 1 && (
+            <div className="flex items-center justify-end gap-3 border-t border-slate-200 px-5 py-3 text-sm">
+              <button
+                type="button"
+                disabled={sectionsPageNumber <= 1 || sectionsLoading}
+                onClick={() => updatePageParam("sectionPage", sectionsPageNumber - 1)}
+                className="inline-flex items-center gap-1 text-blue-600 disabled:text-slate-400"
+              >
+                <ChevronLeft size={16} /> Previous
+              </button>
+              <span className="text-slate-500">
+                Page {sectionsPageNumber} of {sectionsTotalPages} ({sectionsTotalItems} sections)
+              </span>
+              <button
+                type="button"
+                disabled={sectionsPageNumber >= sectionsTotalPages || sectionsLoading}
+                onClick={() => updatePageParam("sectionPage", sectionsPageNumber + 1)}
+                className="inline-flex items-center gap-1 text-blue-600 disabled:text-slate-400"
+              >
+                Next <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
@@ -504,12 +546,26 @@ export default function CourseManagement() {
                   courses.map((item) => (
                     <tr key={item.id} className="hover:bg-slate-50">
                       <td className="px-5 py-4 text-sm font-semibold text-blue-600">
-                        <button type="button" onClick={() => setViewedCourse(item)} className="hover:underline">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            updatePageParam("sectionPage", 1);
+                            setViewedCourse(item);
+                          }}
+                          className="hover:underline"
+                        >
                           {item.courseCode}
                         </button>
                       </td>
                       <td className="px-5 py-4 text-sm font-medium text-slate-800">
-                        <button type="button" onClick={() => setViewedCourse(item)} className="text-left hover:text-blue-600 hover:underline">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            updatePageParam("sectionPage", 1);
+                            setViewedCourse(item);
+                          }}
+                          className="text-left hover:text-blue-600 hover:underline"
+                        >
                           {item.courseName}
                         </button>
                       </td>
@@ -527,11 +583,11 @@ export default function CourseManagement() {
           </div>
           {totalPages > 1 && (
             <div className="flex items-center justify-end gap-3 border-t border-slate-200 px-5 py-3 text-sm">
-              <button type="button" disabled={pageNumber === 1} onClick={() => setPageNumber((page) => page - 1)} className="inline-flex items-center gap-1 text-blue-600 disabled:text-slate-400">
+              <button type="button" disabled={pageNumber === 1} onClick={() => updatePageParam("page", pageNumber - 1)} className="inline-flex items-center gap-1 text-blue-600 disabled:text-slate-400">
                 <ChevronLeft size={16} /> Previous
               </button>
               <span className="text-slate-500">Page {pageNumber} of {totalPages}</span>
-              <button type="button" disabled={pageNumber === totalPages} onClick={() => setPageNumber((page) => page + 1)} className="inline-flex items-center gap-1 text-blue-600 disabled:text-slate-400">
+              <button type="button" disabled={pageNumber === totalPages} onClick={() => updatePageParam("page", pageNumber + 1)} className="inline-flex items-center gap-1 text-blue-600 disabled:text-slate-400">
                 Next <ChevronRight size={16} />
               </button>
             </div>
