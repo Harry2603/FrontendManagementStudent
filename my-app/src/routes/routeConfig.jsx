@@ -1,4 +1,12 @@
-import { Bell, BookPlus, Home, Users, Settings, User, GraduationCap } from "lucide-react";
+import {
+  Bell,
+  BookPlus,
+  Home,
+  Users,
+  Settings,
+  User,
+  GraduationCap,
+} from "lucide-react";
 import { ROLES } from "@/config/constants";
 import {
   Login,
@@ -13,6 +21,7 @@ import {
   TranscriptPage,
   CourseManagementPage,
   AnnouncementCenterPage,
+  TeacherCourseSectionPage,
 } from "./pageComponents";
 
 export const routeConfig = [
@@ -79,6 +88,16 @@ export const routeConfig = [
     },
   },
   {
+    path: "/teacher-course-sections",
+    Component: TeacherCourseSectionPage,
+    access: "private",
+    roles: [ROLES.TEACHER],
+    menu: {
+      label: "Course Sections",
+      icon: BookPlus,
+    },
+  },
+  {
     path: "/announcements",
     Component: AnnouncementCenterPage,
     access: "private",
@@ -88,7 +107,7 @@ export const routeConfig = [
       icon: Bell,
     },
   },
-  
+
   {
     path: "/profile",
     Component: ProfilePage,
