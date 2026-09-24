@@ -1,4 +1,4 @@
-import { Home, Users, Settings, User } from "lucide-react";
+import { Bell, BookPlus, Home, Users, Settings, User, GraduationCap } from "lucide-react";
 import { ROLES } from "@/config/constants";
 import {
   Login,
@@ -10,6 +10,9 @@ import {
   NotFound,
   AccountsPage,
   EnrollmentPage,
+  TranscriptPage,
+  CourseManagementPage,
+  AnnouncementCenterPage,
 } from "./pageComponents";
 
 export const routeConfig = [
@@ -25,12 +28,67 @@ export const routeConfig = [
     access: "private",
     roles: [ROLES.STUDENT, ROLES.TEACHER, ROLES.ADMIN],
     menu: {
-      label: "Trang chủ",
+      label: "Home",
       icon: Home,
       end: true,
     },
   },
 
+  {
+    path: "/users",
+    Component: UsersPage,
+    access: "private",
+    roles: [ROLES.ADMIN],
+    menu: {
+      label: "Create Teacher",
+      icon: Users,
+    },
+  },
+  {
+    path: "/accounts",
+    Component: AccountsPage,
+    access: "private",
+    roles: [ROLES.ADMIN, ROLES.TEACHER],
+    menu: {
+      label: "Account Management",
+      icon: Users,
+    },
+  },
+  {
+    path: "/enrollment",
+    Component: EnrollmentPage,
+    access: "private",
+    roles: [ROLES.STUDENT],
+    menu: { label: "Enrollment", icon: Settings },
+  },
+  {
+    path: "/transcript",
+    Component: TranscriptPage,
+    access: "private",
+    roles: [ROLES.STUDENT],
+    menu: { label: "Bảng điểm", icon: GraduationCap },
+  },
+  {
+    path: "/course-management",
+    Component: CourseManagementPage,
+    access: "private",
+    roles: [ROLES.ADMIN],
+    menu: {
+      label: "Course Management",
+      icon: BookPlus,
+    },
+  },
+  {
+    path: "/announcements",
+    Component: AnnouncementCenterPage,
+    access: "private",
+    roles: [ROLES.STUDENT, ROLES.TEACHER, ROLES.ADMIN],
+    menu: {
+      label: "Announcement Center",
+      icon: Bell,
+    },
+  },
+  
   {
     path: "/profile",
     Component: ProfilePage,
@@ -43,26 +101,6 @@ export const routeConfig = [
   },
 
   {
-    path: "/users",
-    Component: UsersPage,
-    access: "private",
-    roles: [ROLES.ADMIN],
-    menu: {
-      label: "Users",
-      icon: Users,
-    },
-  },
-  {
-    path: "/accounts",
-    Component: AccountsPage,
-    access: "private",
-    roles: [ROLES.ADMIN, ROLES.TEACHER],
-    menu: {
-      label: "Accounts",
-      icon: Users,
-    },
-  },
-  {
     path: "/settings",
     Component: SettingsPage,
     access: "private",
@@ -71,13 +109,6 @@ export const routeConfig = [
       label: "Settings",
       icon: Settings,
     },
-  },
-  {
-    path: "/enrollment",
-    Component: EnrollmentPage,
-    access: "private",
-    roles: [ROLES.STUDENT],
-    menu: { label: "Enrollment", icon: Settings },
   },
 
   {
