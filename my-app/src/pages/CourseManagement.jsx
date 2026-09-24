@@ -42,7 +42,7 @@ const initialSection = {
 };
 
 const getErrorMessage = (error, fallback) =>
-  error?.response?.data?.message || fallback;
+  error?.response?.data?.detail || fallback;
 
 function Modal({ title, onClose, children }) {
   return (
@@ -632,16 +632,16 @@ export default function CourseManagement() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="space-y-1.5 text-sm font-medium text-slate-700">Section code<input value={section.sectionCode} onChange={(event) => setSection((current) => ({ ...current, sectionCode: event.target.value }))} required className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" /></label>
-              <label className="space-y-1.5 text-sm font-medium text-slate-700">Capacity<input type="number" min="1" value={section.capacity} onChange={(event) => setSection((current) => ({ ...current, capacity: event.target.value }))} required className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" /></label>
+              <label className="space-y-1.5 text-sm font-medium text-slate-700">Capacity<input type="number" min="1" max="100" value={section.capacity} onChange={(event) => setSection((current) => ({ ...current, capacity: event.target.value }))} required className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" /></label>
             </div>
             <div className="grid gap-4 sm:grid-cols-3">
               <label className="space-y-1.5 text-sm font-medium text-slate-700">Day<select value={section.dayOfWeek} onChange={(event) => setSection((current) => ({ ...current, dayOfWeek: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">{DAYS.map((day) => <option key={day.value} value={day.value}>{day.label}</option>)}</select></label>
-              <label className="space-y-1.5 text-sm font-medium text-slate-700">Start period<input type="number" min="1" value={section.startPeriod} onChange={(event) => setSection((current) => ({ ...current, startPeriod: event.target.value }))} required className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" /></label>
-              <label className="space-y-1.5 text-sm font-medium text-slate-700">End period<input type="number" min="1" value={section.endPeriod} onChange={(event) => setSection((current) => ({ ...current, endPeriod: event.target.value }))} required className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" /></label>
+              <label className="space-y-1.5 text-sm font-medium text-slate-700">Start period<input type="number" min="1" max="10" value={section.startPeriod} onChange={(event) => setSection((current) => ({ ...current, startPeriod: event.target.value }))} required className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" /></label>
+              <label className="space-y-1.5 text-sm font-medium text-slate-700">End period<input type="number" min="1" max="10" value={section.endPeriod} onChange={(event) => setSection((current) => ({ ...current, endPeriod: event.target.value }))} required className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" /></label>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="space-y-1.5 text-sm font-medium text-slate-700">Start date<input type="date" value={section.startDate} onChange={(event) => setSection((current) => ({ ...current, startDate: event.target.value }))} required className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" /></label>
-              <label className="space-y-1.5 text-sm font-medium text-slate-700">End date<input type="date" value={section.endDate} onChange={(event) => setSection((current) => ({ ...current, endDate: event.target.value }))} required className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" /></label>
+              <label className="space-y-1.5 text-sm font-medium text-slate-700">Start date<input disabled type="date" value={section.startDate} onChange={(event) => setSection((current) => ({ ...current, startDate: event.target.value }))} required className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" /></label>
+              <label className="space-y-1.5 text-sm font-medium text-slate-700">End date<input disabled type="date" value={section.endDate} onChange={(event) => setSection((current) => ({ ...current, endDate: event.target.value }))} required className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" /></label>
             </div>
             <div className="flex justify-end gap-3">
               <button type="button" onClick={closeSectionModal} disabled={sectionSubmitting} className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
