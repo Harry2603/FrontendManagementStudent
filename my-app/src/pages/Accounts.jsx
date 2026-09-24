@@ -1,38 +1,48 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import Table from "@/components/ui/Table/Table";
 import RoleTabs from "@/features/users/components/RoleTabs";
-import SectionFilter from "@/features/users/components/SectionFilter";
 import { buildAccountColumns } from "@/features/users/utils/accountColumns";
 import { userService } from "@/features/users/services/useService";
-import { courseSectionService } from "@/features/enrollment/services/courseSectionService";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
-// Tạo 1 lần ở module scope vì không phụ thuộc props/state của Accounts
-// -> tránh Table nhận "columns" object mới mỗi render (đỡ re-render thừa).
 const COLUMNS = buildAccountColumns();
 const PAGE_SIZE = 10;
+
+function getPageFromParams(value) {
+  const page = Number.parseInt(value, 10);
+  return Number.isInteger(page) && page > 0 ? page : 1;
+}
 
 export default function Accounts() {
   const { user } = useAuth();
   const role = user?.role; // "ADMIN" | "TEACHER"
-
-  const [tab, setTab] = useState("STUDENT");
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState("");
-  const [section, setSection] = useState("ALL");
-  const [sectionOptions, setSectionOptions] = useState([]);
-
   const [users, setUsers] = useState([]);
-  const [pageNumber, setPageNumber] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const canSeeTeacherTab = role === "ADMIN";
-  const activeTab = canSeeTeacherTab || tab !== "TEACHER" ? tab : "STUDENT";
+  const requestedTab = searchParams.get("role");
+  const activeTab =
+    requestedTab === "TEACHER" && canSeeTeacherTab ? "TEACHER" : "STUDENT";
+  const pageNumber = getPageFromParams(searchParams.get("page"));
+
+  const updateQueryParams = useCallback(
+    (updates) => {
+      const nextParams = new URLSearchParams(searchParams);
+      Object.entries(updates).forEach(([key, value]) => {
+        nextParams.set(key, String(value));
+      });
+      setSearchParams(nextParams);
+    },
+    [searchParams, setSearchParams],
+  );
 
   const handleTabChange = (nextTab) => {
-    setTab(nextTab);
-    setPageNumber(1);
+    updateQueryParams({ role: nextTab, page: 1 });
   };
 
   // Load users theo role và trang hiện tại; search/sort xử lý client-side.
@@ -49,8 +59,10 @@ export default function Accounts() {
         .then((res) => {
           if (!ignore) {
             setUsers(res.items ?? []);
-            setPageNumber(res.pageNumber ?? pageNumber);
             setTotalPages(res.totalPages ?? 1);
+            if (res.pageNumber && res.pageNumber !== pageNumber) {
+              updateQueryParams({ page: res.pageNumber });
+            }
           }
         })
         .catch(() => {
@@ -64,31 +76,9 @@ export default function Accounts() {
     return () => {
       ignore = true;
     };
-  }, [activeTab, pageNumber]);
+  }, [activeTab, pageNumber, updateQueryParams]);
 
-  // Section dropdown: chỉ Teacher có data thật (API đã có).
-  // Admin: chờ API riêng -> giữ nguyên "Tất cả section" (xem SectionFilter.jsx).
-  useEffect(() => {
-    if (role !== "TEACHER") return;
-
-    let ignore = false;
-    courseSectionService
-      .getMySections()
-      .then((res) => {
-        if (ignore) return;
-        const codes = (res.items ?? []).map((s) => s.sectionCode);
-        setSectionOptions(Array.from(new Set(codes)));
-      })
-      .catch(() => {
-        if (!ignore) setSectionOptions([]);
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [role]);
-
-  // Lọc theo tab (role) + search. CHƯA lọc theo `section` (đã chốt: để sau).
+  
   const filteredUsers = useMemo(() => {
     const keyword = search.trim().toLowerCase();
 
@@ -142,9 +132,9 @@ export default function Accounts() {
         <div className="flex items-center justify-between text-sm">
           <button
             type="button"
-            onClick={() => setPageNumber((page) => page - 1)}
+            onClick={() => updateQueryParams({ page: pageNumber - 1 })}
             disabled={pageNumber <= 1 || loading}
-            className="rounded border border-gray-300 px-3 py-1 disabled:opacity-40"
+            className="cursor-pointer rounded border border-gray-300 px-3 py-1 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Trước
           </button>
@@ -153,9 +143,9 @@ export default function Accounts() {
           </span>
           <button
             type="button"
-            onClick={() => setPageNumber((page) => page + 1)}
+            onClick={() => updateQueryParams({ page: pageNumber + 1 })}
             disabled={pageNumber >= totalPages || loading}
-            className="rounded border border-gray-300 px-3 py-1 disabled:opacity-40"
+            className="cursor-pointer rounded border border-gray-300 px-3 py-1 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Sau
           </button>

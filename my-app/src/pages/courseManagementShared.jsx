@@ -60,7 +60,7 @@ export function Modal({ title, onClose, children }) {
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            className="cursor-pointer rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
           >
             <X size={20} />
           </button>
