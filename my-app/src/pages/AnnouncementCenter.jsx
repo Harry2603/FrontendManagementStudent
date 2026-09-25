@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useAnnouncements } from "@/features/announcements/hooks/useAnnouncements";
+import { courseSectionService } from "@/features/enrollment/services/courseSectionService";
 import AnnouncementForm from "@/features/announcements/components/AnnouncementForm";
 import AnnouncementList from "@/features/announcements/components/AnnouncementList";
 
 export default function AnnouncementCenter() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
+  const [sections, setSections] = useState([]);
   const { user } = useAuth();
   const {
     items,
@@ -22,6 +24,27 @@ export default function AnnouncementCenter() {
   } = useAnnouncements();
 
   const canCreate = user?.role === "TEACHER" || user?.role === "ADMIN";
+
+  useEffect(() => {
+    if (user?.role !== "TEACHER") {
+      return undefined;
+    }
+
+    let active = true;
+    courseSectionService
+      .getTeacherSections({ pageNumber: 1, pageSize: 100 })
+      .then((response) => {
+        if (active) setSections(response?.items ?? []);
+      })
+      .catch(() => {
+        if (active) setSections([]);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [user?.role]);
+
   const visibleItems = items.filter((item) => {
     const creatorRole = item?.user?.role;
     return creatorRole === "TEACHER" || creatorRole === "ADMIN";
@@ -51,6 +74,8 @@ export default function AnnouncementCenter() {
           onCreate={createAnnouncement}
           isSubmitting={isSubmitting}
           onClose={() => setIsFormOpen(false)}
+          sections={user?.role === "TEACHER" ? sections : []}
+          isTeacher={user?.role === "TEACHER"}
         />
       )}
 
@@ -70,22 +95,27 @@ export default function AnnouncementCenter() {
           className="fixed inset-0 z-30 flex items-center justify-center bg-slate-900/50 p-4"
           role="presentation"
           onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setSelectedAnnouncement(null);
+            if (event.target === event.currentTarget)
+              setSelectedAnnouncement(null);
           }}
         >
           <section
             role="dialog"
             aria-modal="true"
             aria-labelledby="announcement-detail-title"
-            className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl"
+            className="max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-xl"
           >
             <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 id="announcement-detail-title" className="text-xl font-semibold text-gray-900">
+              <div className="min-w-0">
+                <h2
+                  id="announcement-detail-title"
+                  className="break-words text-xl font-semibold text-gray-900"
+                >
                   {selectedAnnouncement.title}
                 </h2>
                 <p className="mt-1 text-sm text-gray-500">
-                  {selectedAnnouncement.user?.fullName ?? "Anonymous"} · {selectedAnnouncement.user?.role}
+                  {selectedAnnouncement.user?.fullName ?? "Anonymous"} ·{" "}
+                  {selectedAnnouncement.user?.role}
                 </p>
               </div>
               <button
@@ -97,7 +127,7 @@ export default function AnnouncementCenter() {
                 <X size={20} />
               </button>
             </div>
-            <p className="mt-5 whitespace-pre-wrap text-sm leading-6 text-gray-700">
+            <p className="mt-5 break-words whitespace-pre-wrap text-sm leading-6 text-gray-700">
               {selectedAnnouncement.content}
             </p>
             <p className="mt-5 text-xs text-gray-400">

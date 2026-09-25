@@ -1,8 +1,15 @@
 import { useState, useCallback } from "react";
 
-export default function AnnouncementForm({ onCreate, isSubmitting, onClose }) {
+export default function AnnouncementForm({
+  onCreate,
+  isSubmitting,
+  onClose,
+  sections,
+  isTeacher,
+}) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [sectionId, setSectionId] = useState("");
   const [error, setError] = useState("");
 
   const handleSubmit = useCallback(
@@ -15,17 +22,19 @@ export default function AnnouncementForm({ onCreate, isSubmitting, onClose }) {
       const result = await onCreate({
         title: title.trim(),
         content: content.trim(),
+        ...(sectionId ? { sectionId } : {}),
       });
       if (result.success) {
         setTitle("");
         setContent("");
+        setSectionId("");
         setError("");
         onClose();
       } else {
         setError("Tạo thông báo thất bại, thử lại sau");
       }
     },
-    [title, content, onCreate, onClose],
+    [title, content, sectionId, onCreate, onClose],
   );
 
   return (
@@ -37,7 +46,7 @@ export default function AnnouncementForm({ onCreate, isSubmitting, onClose }) {
     >
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-lg space-y-3 rounded-xl bg-white p-5 shadow-xl"
+        className="max-h-[calc(100vh-2rem)] w-full max-w-lg space-y-3 overflow-y-auto rounded-xl bg-white p-5 shadow-xl"
       >
         <div className="flex items-center justify-between">
           <h2
@@ -61,7 +70,25 @@ export default function AnnouncementForm({ onCreate, isSubmitting, onClose }) {
           rows={5}
           className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-600"
         />
-        {/* TODO: thêm select Course/All khi backend hỗ trợ target course. */}
+        <label className="block text-sm text-gray-700">
+          <span className="mb-1 block font-medium">Course section</span>
+          <select
+            value={sectionId}
+            onChange={(event) => setSectionId(event.target.value)}
+            disabled={!isTeacher}
+            className="w-full rounded border border-gray-300 px-3 py-2 outline-none focus:border-blue-600 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+          >
+            <option value="">Tất cả course section</option>
+            {sections.map((section) => (
+              <option key={section.id} value={section.id}>
+                {section.sectionCode}
+                {section.course?.courseName
+                  ? ` - ${section.course.courseName}`
+                  : ""}
+              </option>
+            ))}
+          </select>
+        </label>
         <div className="flex justify-end gap-2">
           <button
             type="button"

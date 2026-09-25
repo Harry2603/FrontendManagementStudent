@@ -46,13 +46,17 @@ export default function AnnouncementList({
               <button
                 type="button"
                 onClick={() => onSelect(item)}
-                className="block w-full text-left hover:bg-gray-50"
+                className="block w-full min-w-0 text-left hover:bg-gray-50"
               >
-                <div className="flex items-center justify-between">
-                  <h3 className="font-medium text-gray-900">{item.title}</h3>
+                <div className="flex min-w-0 items-center justify-between gap-3">
+                  <h3 className="min-w-0 truncate font-medium text-gray-900">
+                    {item.title}
+                  </h3>
                   <CreatorBadge role={item.user?.role} />
                 </div>
-                <p className="mt-1 text-sm text-gray-600">{item.content}</p>
+                <p className="mt-1 line-clamp-2 break-words text-sm text-gray-600">
+                  {item.content}
+                </p>
                 <div className="mt-1 flex items-center gap-2 text-xs text-gray-400">
                   <span>{item.user?.fullName ?? "Ẩn danh"}</span>
                   <span>•</span>
