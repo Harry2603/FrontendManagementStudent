@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import Table from "@/components/ui/Table/Table";
 import RoleTabs from "@/features/users/components/RoleTabs";
@@ -18,7 +18,8 @@ export default function Accounts() {
   const { user } = useAuth();
   const role = user?.role; // "ADMIN" | "TEACHER"
   const [searchParams, setSearchParams] = useSearchParams();
-  const [search, setSearch] = useState("");
+  const searchQuery = searchParams.get("search") ?? "";
+  const [search, setSearch] = useState(searchQuery);
   const [users, setUsers] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -29,6 +30,10 @@ export default function Accounts() {
   const activeTab =
     requestedTab === "TEACHER" && canSeeTeacherTab ? "TEACHER" : "STUDENT";
   const pageNumber = getPageFromParams(searchParams.get("page"));
+
+  useEffect(() => {
+    setSearch(searchQuery);
+  }, [searchQuery]);
 
   const updateQueryParams = useCallback(
     (updates) => {
@@ -54,7 +59,7 @@ export default function Accounts() {
     setError("");
 
     userService
-      .getAllUsers({ role: activeTab, pageNumber, pageSize: PAGE_SIZE })
+      .getAllUsers({ search: searchQuery, role: activeTab, pageNumber, pageSize: PAGE_SIZE })
       .then((res) => {
         if (!ignore) {
           setUsers(res.items ?? []);
@@ -71,24 +76,16 @@ export default function Accounts() {
     return () => {
       ignore = true;
     };
-  }, [activeTab, pageNumber]);
+  }, [activeTab, pageNumber, searchQuery]);
 
   const handleTabChange = (nextTab) => {
     updateQueryParams({ role: nextTab, page: 1 });
   };
 
-  const filteredUsers = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
-
-    return users.filter((u) => {
-      if (u.role !== activeTab) return false;
-      if (!keyword) return true;
-
-      const fullName = String(u.fullName ?? "").toLowerCase();
-      const email = String(u.email ?? "").toLowerCase();
-      return fullName.includes(keyword) || email.includes(keyword);
-    });
-  }, [users, activeTab, search]);
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+    updateQueryParams({ search: search.trim(), page: 1 });
+  };
 
   return (
     <div className="space-y-4">
@@ -103,7 +100,7 @@ export default function Accounts() {
           canSeeTeacherTab={canSeeTeacherTab}
         />
 
-        <div className="flex flex-wrap items-center gap-3">
+        <form onSubmit={handleSearchSubmit} className="flex flex-wrap items-center gap-3">
           <input
             type="text"
             placeholder="Search by name or email..."
@@ -111,7 +108,7 @@ export default function Accounts() {
             onChange={(e) => setSearch(e.target.value)}
             className="rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-600"
           />
-        </div>
+        </form>
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
@@ -121,7 +118,7 @@ export default function Accounts() {
       ) : (
         <Table
           columns={COLUMNS}
-          data={filteredUsers}
+          data={users}
           rowKey={(row) => row.id}
         />
       )}
