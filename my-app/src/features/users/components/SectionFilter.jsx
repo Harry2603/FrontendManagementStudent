@@ -9,10 +9,10 @@ function SectionFilter({ value, onChange, options, disabled }) {
       value={value}
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
-      title={disabled ? "Chưa có API lọc section cho Admin" : undefined}
+      title={disabled ? "Section filtering is not available for admins" : undefined}
       className="rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-600 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
     >
-      <option value="ALL">Tất cả section</option>
+      <option value="ALL">All Sections</option>
       {options.map((code) => (
         <option key={code} value={code}>
           {code}

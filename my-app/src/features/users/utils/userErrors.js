@@ -1,9 +1,9 @@
 export const getCreateTeacherError = (error) => {
   if (!error.response) {
-    return { form: "Không kết nối được máy chủ, vui lòng thử lại" };
+    return { form: "Unable to connect to the server. Please try again." };
   }
   if (error.response.status === 409) {
-    return { email: "Email đã được sử dụng" };
+    return { email: "This email is already in use." };
   }
-  return { form: "Tạo tài khoản giảng viên thất bại, vui lòng thử lại" };
+  return { form: "Unable to create the teacher account. Please try again." };
 };

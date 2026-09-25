@@ -29,7 +29,7 @@ function SelectBase({
         aria-invalid={!!error}
         className={SELECT_CLASS}
       >
-        <option value="">-- Chọn --</option>
+        <option value="">-- Select --</option>
         {options.map((o) => (
           <option key={o.value} value={o.value}>
             {o.label}

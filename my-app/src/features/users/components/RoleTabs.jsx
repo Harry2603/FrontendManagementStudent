@@ -1,8 +1,8 @@
 import { memo } from "react";
 
 const TABS = [
-  { value: "STUDENT", label: "Sinh viên" },
-  { value: "TEACHER", label: "Giảng viên" },
+  { value: "STUDENT", label: "Students" },
+  { value: "TEACHER", label: "Teachers" },
 ];
 
 // memo: RoleTabs chỉ phụ thuộc value/onChange/canSeeTeacherTab, tránh re-render

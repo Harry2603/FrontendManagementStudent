@@ -16,7 +16,7 @@ export default function AnnouncementForm({
     async (e) => {
       e.preventDefault();
       if (!title.trim() || !content.trim()) {
-        setError("Vui lòng nhập đầy đủ tiêu đề và nội dung");
+        setError("Please enter both a title and content.");
         return;
       }
       const result = await onCreate({
@@ -31,7 +31,7 @@ export default function AnnouncementForm({
         setError("");
         onClose();
       } else {
-        setError("Tạo thông báo thất bại, thử lại sau");
+        setError("Unable to create the announcement. Please try again later.");
       }
     },
     [title, content, sectionId, onCreate, onClose],
@@ -53,20 +53,20 @@ export default function AnnouncementForm({
             id="announcement-form-title"
             className="text-lg font-semibold text-gray-900"
           >
-            Tạo thông báo
+            Create Announcement
           </h2>
         </div>
         {error && <p className="text-sm text-red-600">{error}</p>}
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Tiêu đề"
+          placeholder="Title"
           className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-600"
         />
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="Nội dung"
+          placeholder="Content"
           rows={5}
           className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-600"
         />
@@ -95,14 +95,14 @@ export default function AnnouncementForm({
             onClick={onClose}
             className="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
           >
-            Hủy
+            Cancel
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
             className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
           >
-            {isSubmitting ? "Đang đăng..." : "Đăng thông báo"}
+            {isSubmitting ? "Posting..." : "Post Announcement"}
           </button>
         </div>
       </form>

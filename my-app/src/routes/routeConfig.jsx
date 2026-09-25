@@ -75,7 +75,7 @@ export const routeConfig = [
     Component: TranscriptPage,
     access: "private",
     roles: [ROLES.STUDENT],
-    menu: { label: "Bảng điểm", icon: GraduationCap },
+    menu: { label: "Transcript", icon: GraduationCap },
   },
   {
     path: "/courses",

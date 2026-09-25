@@ -12,9 +12,9 @@ import Button from "@/components/ui/Button";
 import PageLoader from "@/components/common/PageLoader";
 
 const GENDER_OPTIONS = [
-  { value: "MALE", label: "Nam" },
-  { value: "FEMALE", label: "Nữ" },
-  { value: "OTHER", label: "Khác" },
+  { value: "MALE", label: "Male" },
+  { value: "FEMALE", label: "Female" },
+  { value: "OTHER", label: "Other" },
 ];
 
 export default function Profile() {
@@ -47,7 +47,7 @@ export default function Profile() {
         if (ignore) return;
         setPageError(
           error?.response?.data?.message ||
-            "Không tải được thông tin, vui lòng thử lại",
+            "Unable to load your profile. Please try again.",
         );
       } finally {
         if (!ignore) setPageLoading(false);
@@ -76,11 +76,11 @@ export default function Profile() {
       if (!values || !profile) return;
 
       const clientErrors = {
-        fullName: validateRequired(values.fullName, "họ tên"),
+        fullName: validateRequired(values.fullName, "your full name"),
         dateOfBirth: validateDateOfBirth(values.dateOfBirth),
         gender: validateGender(values.gender),
         phone: validatePhone(values.phone),
-        address: validateRequired(values.address, "địa chỉ"),
+        address: validateRequired(values.address, "your address"),
       };
       if (Object.values(clientErrors).some(Boolean)) {
         setErrors(clientErrors);
@@ -98,12 +98,12 @@ export default function Profile() {
           avatarUrl: profile.avatarUrl, // field khóa, gửi lại nguyên giá trị default
         });
         setProfile(updated);
-        setSuccessMsg("Cập nhật thông tin thành công");
+        setSuccessMsg("Profile updated successfully.");
       } catch (error) {
         setErrors({
           form:
             error?.response?.data?.message ||
-            "Cập nhật thất bại, vui lòng thử lại",
+            "Update failed. Please try again.",
         });
       } finally {
         setSaving(false);
@@ -119,7 +119,7 @@ export default function Profile() {
       <div className="mx-auto max-w-md space-y-3 rounded-xl bg-white p-8 text-center shadow">
         <p className="text-sm text-red-600">{pageError}</p>
         <Button variant="secondary" onClick={() => window.location.reload()}>
-          Thử lại
+          Try Again
         </Button>
       </div>
     );
@@ -132,7 +132,7 @@ export default function Profile() {
       className="mx-auto w-full max-w-md space-y-4 rounded-xl bg-white p-8 shadow"
     >
       <h1 className="text-2xl font-semibold text-gray-900">
-        Thông tin cá nhân
+        Personal Information
       </h1>
 
       {errors.form && (
@@ -151,11 +151,11 @@ export default function Profile() {
 
       {/* readonly: email dùng làm username nên khóa, role chỉ hiển thị tham khảo */}
       <Input name="email" label="Email" value={profile.email} disabled />
-      <Input name="role" label="Vai trò" value={profile.role} disabled />
+      <Input name="role" label="Role" value={profile.role} disabled />
 
       <Input
         name="fullName"
-        label="Họ và tên"
+        label="Full Name"
         autoComplete="name"
         value={values.fullName}
         error={errors.fullName}
@@ -165,7 +165,7 @@ export default function Profile() {
       <div className="grid grid-cols-2 gap-4">
         <Input
           name="dateOfBirth"
-          label="Ngày sinh"
+          label="Date of Birth"
           type="date"
           max={new Date().toLocaleDateString("en-CA")}
           value={values.dateOfBirth}
@@ -174,7 +174,7 @@ export default function Profile() {
         />
         <Select
           name="gender"
-          label="Giới tính"
+          label="Gender"
           options={GENDER_OPTIONS}
           value={values.gender}
           error={errors.gender}
@@ -184,7 +184,7 @@ export default function Profile() {
 
       <Input
         name="phone"
-        label="Số điện thoại"
+        label="Phone Number"
         type="tel"
         autoComplete="tel"
         value={values.phone}
@@ -194,7 +194,7 @@ export default function Profile() {
 
       <Input
         name="address"
-        label="Địa chỉ"
+        label="Address"
         autoComplete="street-address"
         value={values.address}
         error={errors.address}
@@ -202,7 +202,7 @@ export default function Profile() {
       />
 
       <Button type="submit" loading={saving}>
-        Lưu thay đổi
+        Save Changes
       </Button>
     </form>
   );
