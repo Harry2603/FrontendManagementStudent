@@ -5,6 +5,7 @@ import {
   Users,
   Settings,
   User,
+ BookPlusIcon,
   GraduationCap,
 } from "lucide-react";
 import { ROLES } from "@/config/constants";
@@ -20,6 +21,7 @@ import {
   TranscriptPage,
   CourseListPage,
   CourseDetailPage,
+  SettingsPage,
   AnnouncementCenterPage,
   TeacherCourseSectionPage,
 } from "./pageComponents";
@@ -68,7 +70,7 @@ export const routeConfig = [
     Component: EnrollmentPage,
     access: "private",
     roles: [ROLES.STUDENT],
-    menu: { label: "Enrollment", icon: Settings },
+    menu: { label: "Enrollment", icon: BookPlusIcon },
   },
   {
     path: "/transcript",
@@ -125,16 +127,16 @@ export const routeConfig = [
     },
   },
 
-  // {
-  //   path: "/settings",
-  //   Component: SettingsPage,
-  //   access: "private",
-  //   roles: [ROLES.STUDENT, ROLES.TEACHER, ROLES.ADMIN],
-  //   menu: {
-  //     label: "Settings",
-  //     icon: Settings,
-  //   },
-  // },
+  {
+    path: "/settings",
+    Component: SettingsPage,
+    access: "private",
+    roles: [ROLES.STUDENT, ROLES.TEACHER, ROLES.ADMIN],
+    menu: {
+      label: "Settings",
+      icon: Settings,
+    },
+  },
 
   {
     path: "*",

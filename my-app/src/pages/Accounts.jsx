@@ -25,28 +25,6 @@ export default function Accounts() {
   const [error, setError] = useState("");
 
   const canSeeTeacherTab = role === "ADMIN";
-
-  // Teacher không được phép ở tab TEACHER -> ép về STUDENT nếu role thay đổi
-  useEffect(() => {
-    if (!canSeeTeacherTab && tab === "TEACHER") setTab("STUDENT");
-  }, [canSeeTeacherTab, tab]);
-
-  // Load toàn bộ user 1 lần, search/sort xử lý client-side (đã chốt)
-  useEffect(() => {
-    let ignore = false;
-    setLoading(true);
-    setError("");
-
-    userService
-      .getAllUsers()
-      .then((res) => {
-        if (!ignore) setUsers(res.items ?? []);
-      })
-      .catch(() => {
-        if (!ignore) setError("Unable to load the user list.");
-      })
-      .finally(() => {
-        if (!ignore) setLoading(false);
   const requestedTab = searchParams.get("role");
   const activeTab =
     requestedTab === "TEACHER" && canSeeTeacherTab ? "TEACHER" : "STUDENT";
@@ -63,54 +41,52 @@ export default function Accounts() {
     [searchParams, setSearchParams],
   );
 
-  const handleTabChange = (nextTab) => {
-    updateQueryParams({ role: nextTab, page: 1 });
-  };
+  useEffect(() => {
+    if (!canSeeTeacherTab && requestedTab === "TEACHER") {
+      updateQueryParams({ role: "STUDENT", page: 1 });
+    }
+  }, [canSeeTeacherTab, requestedTab, updateQueryParams]);
 
-  // Load users theo role và trang hiện tại; search/sort xử lý client-side.
   useEffect(() => {
     let ignore = false;
 
-    queueMicrotask(() => {
-      if (ignore) return;
-      setLoading(true);
-      setError("");
+    setLoading(true);
+    setError("");
 
-      userService
-        .getAllUsers({ role: activeTab, pageNumber, pageSize: PAGE_SIZE })
-        .then((res) => {
-          if (!ignore) {
-            setUsers(res.items ?? []);
-            setTotalPages(res.totalPages ?? 1);
-            if (res.pageNumber && res.pageNumber !== pageNumber) {
-              updateQueryParams({ page: res.pageNumber });
-            }
-          }
-        })
-        .catch(() => {
-          if (!ignore) setError("Không tải được danh sách user.");
-        })
-        .finally(() => {
-          if (!ignore) setLoading(false);
-        });
-    });
+    userService
+      .getAllUsers({ role: activeTab, pageNumber, pageSize: PAGE_SIZE })
+      .then((res) => {
+        if (!ignore) {
+          setUsers(res.items ?? []);
+          setTotalPages(res.totalPages ?? 1);
+        }
+      })
+      .catch(() => {
+        if (!ignore) setError("Unable to load the user list.");
+      })
+      .finally(() => {
+        if (!ignore) setLoading(false);
+      });
 
     return () => {
       ignore = true;
     };
-  }, [activeTab, pageNumber, updateQueryParams]);
+  }, [activeTab, pageNumber]);
 
-  
+  const handleTabChange = (nextTab) => {
+    updateQueryParams({ role: nextTab, page: 1 });
+  };
+
   const filteredUsers = useMemo(() => {
     const keyword = search.trim().toLowerCase();
 
     return users.filter((u) => {
       if (u.role !== activeTab) return false;
       if (!keyword) return true;
-      return (
-        u.fullName.toLowerCase().includes(keyword) ||
-        u.email.toLowerCase().includes(keyword)
-      );
+
+      const fullName = String(u.fullName ?? "").toLowerCase();
+      const email = String(u.email ?? "").toLowerCase();
+      return fullName.includes(keyword) || email.includes(keyword);
     });
   }, [users, activeTab, search]);
 
