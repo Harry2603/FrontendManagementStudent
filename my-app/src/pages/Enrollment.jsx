@@ -25,6 +25,10 @@ const dayLabels = {
 const formatSection = (section) => ({
   ...section,
   sectionId: section.sectionId ?? section.id,
+  enrollmentId:
+    section.enrollmentId ??
+    section.enrollment?.enrollmentId ??
+    section.enrollment?.id,
   code: section.sectionCode,
   name: `${section.course.courseName}`,
   schedule: `${dayLabels[section.dayOfWeek] ?? section.dayOfWeek}, ${section.startPeriod} - ${section.endPeriod}`,
@@ -39,6 +43,9 @@ export default function EnrollmentPage() {
   const [submitting, setSubmitting] = useState(false);
   const [enrollmentResult, setEnrollmentResult] = useState(null);
   const [enrolledCourses, setEnrolledCourses] = useState([]);
+  const [cancelingSectionId, setCancelingSectionId] = useState(null);
+  const [cancelCourse, setCancelCourse] = useState(null);
+  const [cancelError, setCancelError] = useState("");
   const [availablePage, setAvailablePage] = useState(1);
   const [enrolledPage, setEnrolledPage] = useState(1);
   const [availableTotalPages, setAvailableTotalPages] = useState(1);
@@ -138,6 +145,24 @@ export default function EnrollmentPage() {
       setSubmitting(false);
     }
   };
+  const cancelEnrollment = async () => {
+    if (!cancelCourse?.sectionId || cancelingSectionId) return;
+
+    setCancelingSectionId(cancelCourse.sectionId);
+    setCancelError("");
+    try {
+      await courseSectionService.deleteEnrollment(cancelCourse.sectionId);
+      setCancelCourse(null);
+      setRefreshKey((key) => key + 1);
+    } catch (error) {
+      setCancelError(
+        error?.response?.data?.message ||
+          "Unable to cancel this enrollment. Please try again.",
+      );
+    } finally {
+      setCancelingSectionId(null);
+    }
+  };
   const codeBySectionId = Object.fromEntries(
     availableCourses.map((course) => [course.sectionId, course.code]),
   );
@@ -190,7 +215,34 @@ export default function EnrollmentPage() {
       },
     },
   ];
-  const columns = activeTab === "available" ? availableColumns : basecolumns;
+  const enrolledColumns = [
+    ...basecolumns,
+    {
+      key: "action",
+      header: "Action",
+      render: (course) => {
+        const isCanceling = cancelingSectionId === course.sectionId;
+        return (
+          <button
+            type="button"
+            onClick={() => setCancelCourse(course)}
+            disabled={
+              !course.sectionId || isCanceling || cancelingSectionId !== null
+            }
+            title={
+              course.sectionId ? "Cancel enrollment" : "Section ID is missing"
+            }
+            className="inline-flex items-center gap-1 rounded-md border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isCanceling && <LoaderCircle size={14} className="animate-spin" />}
+            Cancel
+          </button>
+        );
+      },
+    },
+  ];
+  const columns =
+    activeTab === "available" ? availableColumns : enrolledColumns;
   if (pageLoading) return <PageLoader />;
 
   if (pageError) {
@@ -306,6 +358,14 @@ export default function EnrollmentPage() {
           </div>
         </div>
         <div role="tabpanel">
+          {cancelError && (
+            <p
+              role="alert"
+              className="border-b border-red-100 bg-red-50 px-5 py-3 text-sm text-red-600"
+            >
+              {cancelError}
+            </p>
+          )}
           <Table
             columns={columns}
             data={courses}
@@ -358,6 +418,55 @@ export default function EnrollmentPage() {
           </button>
         </div>
       </div>
+
+      {cancelCourse && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setCancelCourse(null);
+          }}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-slate-100"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cancel-enrollment-title"
+          >
+            <h2
+              id="cancel-enrollment-title"
+              className="text-lg font-semibold text-slate-900"
+            >
+              Cancel enrollment?
+            </h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Are you sure you want to cancel enrollment for {cancelCourse.code}
+              ?
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setCancelCourse(null)}
+                disabled={cancelingSectionId !== null}
+                className="rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Keep enrollment
+              </button>
+              <button
+                type="button"
+                onClick={cancelEnrollment}
+                disabled={cancelingSectionId !== null}
+                className="inline-flex items-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {cancelingSectionId !== null && (
+                  <LoaderCircle size={15} className="animate-spin" />
+                )}
+                Confirm cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {enrollmentResult && (
         <div
