@@ -7,7 +7,10 @@ const formatScore = (score) =>
   Number.isFinite(Number(score)) ? Number(score).toFixed(2) : "_";
 
 const formatTenPointScore = (score) =>
-  Number.isFinite(Number(score)) ? (Number(score) / 10).toFixed(2) : "_";
+  Number.isFinite(Number(score)) ? Number(score).toFixed(2) : "_";
+
+const formatCredits = (credits) =>
+  Number.isFinite(Number(credits)) ? Number(credits) : "_";
 
 const SCORE_COLUMNS = [
   { key: "attendance", label: "Attendance", terms: ["attendance", "chuyên cần"] },
@@ -16,14 +19,14 @@ const SCORE_COLUMNS = [
   { key: "final", label: "Final", terms: ["final", "cuối kỳ"] },
 ];
 
-const getComponentScore = (componentScores, terms) => {
-  const component = componentScores?.find((item) => {
+const getComponent = (componentScores, terms) =>
+  componentScores?.find((item) => {
     const name = String(item.componentName ?? "").toLowerCase();
     return terms.some((term) => name.includes(term));
   });
 
-  return formatTenPointScore(component?.score);
-};
+const getComponentScore = (componentScores, terms) =>
+  formatTenPointScore(getComponent(componentScores, terms)?.score);
 
 const resultStyle = (status) => {
   switch (status?.toUpperCase()) {
@@ -68,6 +71,22 @@ function groupByAcademicYear(items) {
     }));
 }
 
+function getGpaSemester(gpaYears, year, semester) {
+  const gpaYear = getGpaYear(gpaYears, year);
+
+  return gpaYear?.semesters?.find(
+    (item) =>
+      item.semesterId === semester.id || item.semesterName === semester.name,
+  );
+}
+
+function getGpaYear(gpaYears, year) {
+  return gpaYears.find(
+    (item) =>
+      item.academicYearId === year.id || item.academicYearName === year.name,
+  );
+}
+
 function ResultStatus({ result }) {
   const status = result?.resultStatus;
 
@@ -87,8 +106,10 @@ function ResultStatus({ result }) {
 
 export default function Transcript() {
   const [items, setItems] = useState([]);
+  const [gpaYears, setGpaYears] = useState([]);
   const [pageLoading, setPageLoading] = useState(true);
   const [pageError, setPageError] = useState("");
+  const [gpaError, setGpaError] = useState("");
 
   useEffect(() => {
     let ignore = false;
@@ -96,25 +117,42 @@ export default function Transcript() {
     async function fetchTranscript() {
       setPageLoading(true);
       setPageError("");
+      setGpaError("");
 
       try {
-        const firstPage = await transcriptService.getCourseResults();
-        const totalPages = firstPage?.totalPages ?? 1;
-        const remainingPages = await Promise.all(
-          Array.from({ length: Math.max(totalPages - 1, 0) }, (_, index) =>
-            transcriptService.getCourseResults({ pageNumber: index + 2 }),
-          ),
-        );
-        const allItems = [firstPage, ...remainingPages].flatMap(
-          (page) => page?.items ?? [],
-        );
+        const [transcriptResult, gpaResult] = await Promise.allSettled([
+          (async () => {
+            const firstPage = await transcriptService.getCourseResults();
+            const totalPages = firstPage?.totalPages ?? 1;
+            const remainingPages = await Promise.all(
+              Array.from({ length: Math.max(totalPages - 1, 0) }, (_, index) =>
+                transcriptService.getCourseResults({ pageNumber: index + 2 }),
+              ),
+            );
+            return [firstPage, ...remainingPages].flatMap(
+              (page) => page?.items ?? [],
+            );
+          })(),
+          transcriptService.getGpa(),
+        ]);
 
-        if (!ignore) setItems(allItems);
-      } catch (error) {
-        if (!ignore) {
+        if (ignore) return;
+
+        if (transcriptResult.status === "fulfilled") {
+          setItems(transcriptResult.value);
+        } else {
           setPageError(
-            error?.response?.data?.message ||
+            transcriptResult.reason?.response?.data?.message ||
               "Unable to load your transcript. Please try again.",
+          );
+        }
+
+        if (gpaResult.status === "fulfilled") {
+          setGpaYears(gpaResult.value?.academicYears ?? []);
+        } else {
+          setGpaError(
+            gpaResult.reason?.response?.data?.message ||
+              "Unable to load GPA information.",
           );
         }
       } finally {
@@ -129,7 +167,6 @@ export default function Transcript() {
   }, []);
 
   const academicYears = useMemo(() => groupByAcademicYear(items), [items]);
-
   if (pageLoading) return <PageLoader />;
 
   if (pageError) {
@@ -161,6 +198,12 @@ export default function Transcript() {
         </p>
       </div>
 
+      {gpaError ? (
+        <p role="alert" className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-700">
+          {gpaError}
+        </p>
+      ) : null}
+
       {academicYears.length === 0 ? (
         <div className="rounded-xl bg-white px-6 py-14 text-center shadow-sm ring-1 ring-slate-200">
           <BookOpenCheck className="mx-auto text-slate-400" size={32} />
@@ -175,19 +218,35 @@ export default function Transcript() {
             key={year.id}
             className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200"
           >
-            <div className="flex items-center gap-3 border-b border-slate-200 px-5 py-4">
-              <span className="rounded-lg bg-blue-50 p-2 text-blue-600">
-                <GraduationCap size={20} />
-              </span>
-              <div>
-                <h2 className="font-semibold text-slate-900">{year.name}</h2>
-                <p className="mt-0.5 text-sm text-slate-500">
-                  {year.semesters.reduce(
-                    (total, semester) => total + semester.items.length,
-                    0,
-                  )} courses
-                </p>
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
+              <div className="flex items-center gap-3">
+                <span className="rounded-lg bg-blue-50 p-2 text-blue-600">
+                  <GraduationCap size={20} />
+                </span>
+                <div>
+                  <h2 className="font-semibold text-slate-900">{year.name}</h2>
+                  <p className="mt-0.5 text-sm text-slate-500">
+                    {year.semesters.reduce(
+                      (total, semester) => total + semester.items.length,
+                      0,
+                    )} courses
+                  </p>
+                </div>
               </div>
+              {(() => {
+                const gpaYear = getGpaYear(gpaYears, year);
+
+                return gpaYear ? (
+                  <div className="flex items-center gap-4 text-sm">
+                    <span className="text-slate-500">
+                      Cumulative GPA: <strong className="text-blue-600">{formatScore(gpaYear.cumulativeGpa)}</strong>
+                    </span>
+                    <span className="text-slate-500">
+                      Cumulative credits: <strong className="text-slate-700">{formatCredits(gpaYear.cumulativeCompletedCredits)}</strong>
+                    </span>
+                  </div>
+                ) : null;
+              })()}
             </div>
 
             <div className="divide-y divide-slate-200">
@@ -234,15 +293,30 @@ export default function Transcript() {
                                 {item.credits ?? "_"}
                               </td>
                               {SCORE_COLUMNS.map((column) => (
-                                <td
-                                  key={column.key}
-                                  className="px-4 py-3 text-center text-sm text-slate-700"
-                                >
-                                  {getComponentScore(
+                                (() => {
+                                  const component = getComponent(
                                     item.componentScores,
                                     column.terms,
-                                  )}
-                                </td>
+                                  );
+                                  const weight = Number(component?.weight);
+
+                                  return (
+                                    <td
+                                      key={column.key}
+                                      title={
+                                        Number.isFinite(weight)
+                                          ? `${column.label} weight: ${weight}%`
+                                          : undefined
+                                      }
+                                      className="px-4 py-3 text-center text-sm text-slate-700"
+                                    >
+                                      {getComponentScore(
+                                        item.componentScores,
+                                        column.terms,
+                                      )}
+                                    </td>
+                                  );
+                                })()
                               ))}
                               <td className="px-4 py-3 text-center text-sm font-semibold text-slate-800">
                                 {formatTenPointScore(result?.finalScore)}
@@ -262,6 +336,20 @@ export default function Transcript() {
                       </tbody>
                     </table>
                   </div>
+                  {(() => {
+                    const gpaSemester = getGpaSemester(gpaYears, year, semester);
+
+                    return gpaSemester ? (
+                      <div className="mt-3 flex flex-wrap justify-end gap-x-5 gap-y-1 text-sm">
+                        <span className="text-slate-500">
+                          GPA: <strong className="text-blue-600">{formatScore(gpaSemester.gpa)}</strong>
+                        </span>
+                        <span className="text-slate-500">
+                          Completed credits: <strong className="text-slate-700">{formatCredits(gpaSemester.completedCredits)}</strong>
+                        </span>
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
               ))}
             </div>
