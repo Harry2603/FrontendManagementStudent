@@ -11,6 +11,7 @@ import {
 import { Table } from "@/components/ui/Table";
 import PageLoader from "@/components/common/PageLoader";
 import { courseSectionService } from "@/features/enrollment/services/courseSectionService";
+import { useSearchParams } from "react-router-dom";
 
 const dayLabels = {
   MONDAY: "Monday",
@@ -25,13 +26,24 @@ const dayLabels = {
 const formatSection = (section) => ({
   ...section,
   sectionId: section.sectionId ?? section.id,
+  enrollmentId:
+    section.enrollmentId ??
+    section.enrollment?.enrollmentId ??
+    section.enrollment?.id,
   code: section.sectionCode,
   name: `${section.course.courseName}`,
   schedule: `${dayLabels[section.dayOfWeek] ?? section.dayOfWeek}, ${section.startPeriod} - ${section.endPeriod}`,
 });
 
+const getPositiveQueryNumber = (value, fallback) => {
+  const number = Number(value);
+  return Number.isInteger(number) && number > 0 ? number : fallback;
+};
+
 export default function EnrollmentPage() {
-  const [activeTab, setActiveTab] = useState("available");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab =
+    searchParams.get("tab") === "enrolled" ? "enrolled" : "available";
   const [availableCourses, setAvailableCourses] = useState([]);
   const [pageLoading, setPageLoading] = useState(true);
   const [pageError, setPageError] = useState("");
@@ -39,29 +51,72 @@ export default function EnrollmentPage() {
   const [submitting, setSubmitting] = useState(false);
   const [enrollmentResult, setEnrollmentResult] = useState(null);
   const [enrolledCourses, setEnrolledCourses] = useState([]);
-  const [availablePage, setAvailablePage] = useState(1);
-  const [enrolledPage, setEnrolledPage] = useState(1);
+  const [cancelingSectionId, setCancelingSectionId] = useState(null);
+  const [cancelCourse, setCancelCourse] = useState(null);
+  const [cancelError, setCancelError] = useState("");
   const [availableTotalPages, setAvailableTotalPages] = useState(1);
   const [enrolledTotalPages, setEnrolledTotalPages] = useState(1);
-  const pageSize = 10;
+  const availablePage = getPositiveQueryNumber(
+    searchParams.get("PageNumber"),
+    1,
+  );
+  const enrolledPage = getPositiveQueryNumber(
+    searchParams.get("EnrolledPageNumber"),
+    1,
+  );
+  const pageSize = getPositiveQueryNumber(searchParams.get("PageSize"), 10);
   const tabs = [
     { id: "available", label: "Course Registration", icon: BookOpen },
     { id: "enrolled", label: "Enrolled Courses", icon: Check },
   ];
-  const [searchTerm, setSearchTerm] = useState("");
+  const [courseNameInput, setCourseNameInput] = useState(
+    searchParams.get("CourseName") ?? "",
+  );
+  const [sectionCodeInput, setSectionCodeInput] = useState(
+    searchParams.get("SectionCode") ?? "",
+  );
   const [refreshKey, setRefreshKey] = useState(0);
-  const normalize = (text) =>
-    String(text ?? "")
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/đ/g, "d")
-      .replace(/Đ/g, "D")
-      .toLowerCase();
 
-  const sourceCourses =
-    activeTab === "available" ? availableCourses : enrolledCourses;
+  const courseNameSearch = searchParams.get("CourseName") ?? "";
+  const sectionCodeSearch = searchParams.get("SectionCode") ?? "";
 
-  const keyword = normalize(searchTerm.trim());
+  useEffect(() => {
+    setCourseNameInput(courseNameSearch);
+    setSectionCodeInput(sectionCodeSearch);
+  }, [courseNameSearch, sectionCodeSearch]);
+
+  const updateQueryParams = (updates) => {
+    const nextParams = new URLSearchParams(searchParams);
+
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === undefined || value === null || value === "") {
+        nextParams.delete(key);
+      } else {
+        nextParams.set(key, String(value));
+      }
+    });
+
+    setSearchParams(nextParams);
+  };
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams(searchParams);
+    let changed = false;
+
+    [
+      ["PageNumber", availablePage],
+      ["EnrolledPageNumber", enrolledPage],
+      ["PageSize", pageSize],
+    ].forEach(([key, value]) => {
+      if (!nextParams.has(key)) {
+        nextParams.set(key, String(value));
+        changed = true;
+      }
+    });
+
+    if (changed) setSearchParams(nextParams, { replace: true });
+  }, [searchParams, setSearchParams, availablePage, enrolledPage, pageSize]);
+
   useEffect(() => {
     let ignore = false;
 
@@ -71,6 +126,8 @@ export default function EnrollmentPage() {
       try {
         const [openRes, myRes] = await Promise.all([
           courseSectionService.getOpenSections({
+            courseName: courseNameSearch,
+            sectionCode: sectionCodeSearch,
             pageNumber: availablePage,
             pageSize,
           }),
@@ -101,14 +158,46 @@ export default function EnrollmentPage() {
     return () => {
       ignore = true;
     };
-  }, [refreshKey, availablePage, enrolledPage]);
-  const courses = keyword
-    ? sourceCourses.filter((course) =>
-        [course.code, course.name, course.schedule].some((value) =>
-          normalize(value).includes(keyword),
-        ),
-      )
-    : sourceCourses;
+  }, [
+    refreshKey,
+    availablePage,
+    enrolledPage,
+    courseNameSearch,
+    sectionCodeSearch,
+    pageSize,
+  ]);
+
+  const searchAvailableSections = (event) => {
+    event.preventDefault();
+    updateQueryParams({
+      CourseName: courseNameInput.trim(),
+      SectionCode: sectionCodeInput.trim(),
+      PageNumber: 1,
+      PageSize: pageSize,
+    });
+  };
+
+  const clearAvailableSearch = () => {
+    setCourseNameInput("");
+    setSectionCodeInput("");
+    updateQueryParams({
+      CourseName: "",
+      SectionCode: "",
+      PageNumber: 1,
+      PageSize: pageSize,
+    });
+  };
+
+  const changePage = (page) => {
+    updateQueryParams({
+      [activeTab === "available" ? "PageNumber" : "EnrolledPageNumber"]: page,
+      PageSize: pageSize,
+    });
+  };
+
+  const changeTab = (tab) => {
+    updateQueryParams({ tab });
+  };
   const toggleSection = (sectionId) => {
     setSelectedSectionIds((currentIds) =>
       currentIds.includes(sectionId)
@@ -136,6 +225,24 @@ export default function EnrollmentPage() {
       });
     } finally {
       setSubmitting(false);
+    }
+  };
+  const cancelEnrollment = async () => {
+    if (!cancelCourse?.sectionId || cancelingSectionId) return;
+
+    setCancelingSectionId(cancelCourse.sectionId);
+    setCancelError("");
+    try {
+      await courseSectionService.deleteEnrollment(cancelCourse.sectionId);
+      setCancelCourse(null);
+      setRefreshKey((key) => key + 1);
+    } catch (error) {
+      setCancelError(
+        error?.response?.data?.message ||
+          "Unable to cancel this enrollment. Please try again.",
+      );
+    } finally {
+      setCancelingSectionId(null);
     }
   };
   const codeBySectionId = Object.fromEntries(
@@ -190,7 +297,34 @@ export default function EnrollmentPage() {
       },
     },
   ];
-  const columns = activeTab === "available" ? availableColumns : basecolumns;
+  const enrolledColumns = [
+    ...basecolumns,
+    {
+      key: "action",
+      header: "Action",
+      render: (course) => {
+        const isCanceling = cancelingSectionId === course.sectionId;
+        return (
+          <button
+            type="button"
+            onClick={() => setCancelCourse(course)}
+            disabled={
+              !course.sectionId || isCanceling || cancelingSectionId !== null
+            }
+            title={
+              course.sectionId ? "Cancel enrollment" : "Section ID is missing"
+            }
+            className="inline-flex items-center gap-1 rounded-md border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isCanceling && <LoaderCircle size={14} className="animate-spin" />}
+            Cancel
+          </button>
+        );
+      },
+    },
+  ];
+  const columns =
+    activeTab === "available" ? availableColumns : enrolledColumns;
   if (pageLoading) return <PageLoader />;
 
   if (pageError) {
@@ -239,7 +373,7 @@ export default function EnrollmentPage() {
                 type="button"
                 role="tab"
                 aria-selected={isActive}
-                onClick={() => setActiveTab(id)}
+                onClick={() => changeTab(id)}
                 className={`inline-flex shrink-0 items-center gap-2 border-b-2 px-1 pb-3 text-sm font-semibold transition-colors ${
                   isActive
                     ? "border-blue-600 text-blue-600"
@@ -279,36 +413,75 @@ export default function EnrollmentPage() {
             </button>
           </div>
         </div>
-        <div className="border-b border-slate-200 px-5 py-3">
-          <div className="relative">
-            <Search
-              size={18}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-            />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Search by section code, course, or schedule..."
-              aria-label="Search course sections"
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-10 pr-9 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            />
-            {searchTerm && (
+        {activeTab === "available" && (
+          <form
+            onSubmit={searchAvailableSections}
+            className="flex flex-wrap items-center gap-2 border-b border-slate-200 px-5 py-3"
+          >
+            <label className="relative min-w-[220px] flex-1">
+              <span className="sr-only">Search by course name</span>
+              <Search
+                size={18}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+              <input
+                type="search"
+                value={courseNameInput}
+                onChange={(event) => setCourseNameInput(event.target.value)}
+                placeholder="Course name..."
+                aria-label="Search by course name"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-10 pr-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
+            </label>
+            <label className="relative min-w-[220px] flex-1">
+              <span className="sr-only">Search by section code</span>
+              <Search
+                size={18}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+              <input
+                type="search"
+                value={sectionCodeInput}
+                onChange={(event) => setSectionCodeInput(event.target.value)}
+                placeholder="Section code..."
+                aria-label="Search by section code"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-10 pr-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
+            </label>
+            <button
+              type="submit"
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            >
+              <Search size={16} />
+              Search
+            </button>
+            {(courseNameInput || sectionCodeInput) && (
               <button
                 type="button"
-                onClick={() => setSearchTerm("")}
+                onClick={clearAvailableSearch}
                 aria-label="Clear search"
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700"
+                className="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-700"
               >
                 <X size={16} />
+                Clear
               </button>
             )}
-          </div>
-        </div>
+          </form>
+        )}
         <div role="tabpanel">
+          {cancelError && (
+            <p
+              role="alert"
+              className="border-b border-red-100 bg-red-50 px-5 py-3 text-sm text-red-600"
+            >
+              {cancelError}
+            </p>
+          )}
           <Table
             columns={columns}
-            data={courses}
+            data={
+              activeTab === "available" ? availableCourses : enrolledCourses
+            }
             rowKey={(course) => course.sectionId}
             emptyMessage="No course sections found"
           />
@@ -318,8 +491,8 @@ export default function EnrollmentPage() {
             type="button"
             onClick={() =>
               activeTab === "available"
-                ? setAvailablePage((page) => page - 1)
-                : setEnrolledPage((page) => page - 1)
+                ? changePage(availablePage - 1)
+                : changePage(enrolledPage - 1)
             }
             disabled={
               pageLoading ||
@@ -342,8 +515,8 @@ export default function EnrollmentPage() {
             type="button"
             onClick={() =>
               activeTab === "available"
-                ? setAvailablePage((page) => page + 1)
-                : setEnrolledPage((page) => page + 1)
+                ? changePage(availablePage + 1)
+                : changePage(enrolledPage + 1)
             }
             disabled={
               pageLoading ||
@@ -358,6 +531,55 @@ export default function EnrollmentPage() {
           </button>
         </div>
       </div>
+
+      {cancelCourse && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setCancelCourse(null);
+          }}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-slate-100"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cancel-enrollment-title"
+          >
+            <h2
+              id="cancel-enrollment-title"
+              className="text-lg font-semibold text-slate-900"
+            >
+              Cancel enrollment?
+            </h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Are you sure you want to cancel enrollment for {cancelCourse.code}
+              ?
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setCancelCourse(null)}
+                disabled={cancelingSectionId !== null}
+                className="rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Keep enrollment
+              </button>
+              <button
+                type="button"
+                onClick={cancelEnrollment}
+                disabled={cancelingSectionId !== null}
+                className="inline-flex items-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {cancelingSectionId !== null && (
+                  <LoaderCircle size={15} className="animate-spin" />
+                )}
+                Confirm cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {enrollmentResult && (
         <div

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { CheckCircle2, ChevronLeft, ChevronRight, LoaderCircle, Plus, Search } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, LoaderCircle, Plus, Search, X } from "lucide-react";
 import PageLoader from "@/components/common/PageLoader";
 import { courseManagementService } from "@/features/course-management/services/courseManagementService";
 import {
@@ -14,8 +14,10 @@ export default function CourseListPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const pageNumber = getPageFromParams(searchParams.get("page"));
-  const searchQuery = searchParams.get("search") ?? "";
-  const [search, setSearch] = useState(searchQuery);
+  const courseNameQuery = searchParams.get("CourseName") ?? "";
+  const courseCodeQuery = searchParams.get("CourseCode") ?? "";
+  const [courseName, setCourseName] = useState(courseNameQuery);
+  const [courseCode, setCourseCode] = useState(courseCodeQuery);
   const [courses, setCourses] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -28,8 +30,9 @@ export default function CourseListPage() {
   const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
-    setSearch(searchQuery);
-  }, [searchQuery]);
+    setCourseName(courseNameQuery);
+    setCourseCode(courseCodeQuery);
+  }, [courseNameQuery, courseCodeQuery]);
 
   const updatePage = useCallback((page) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -43,7 +46,12 @@ export default function CourseListPage() {
       setPageLoading(true);
       setPageError("");
       try {
-        const response = await courseManagementService.getCourses({ search: searchQuery, pageNumber });
+        const response = await courseManagementService.getCourses({
+          courseName: courseNameQuery,
+          courseCode: courseCodeQuery,
+          pageNumber,
+          pageSize: 10,
+        });
         if (!ignore) {
           setCourses(response?.items ?? []);
           setTotalPages(response?.totalPages ?? 1);
@@ -57,12 +65,25 @@ export default function CourseListPage() {
     }
     loadCourses();
     return () => { ignore = true; };
-  }, [pageNumber, searchQuery]);
+  }, [pageNumber, courseNameQuery, courseCodeQuery]);
 
   const handleSearchSubmit = (event) => {
     event.preventDefault();
     const nextParams = new URLSearchParams(searchParams);
-    nextParams.set("search", search.trim());
+    if (courseName.trim()) nextParams.set("CourseName", courseName.trim());
+    else nextParams.delete("CourseName");
+    if (courseCode.trim()) nextParams.set("CourseCode", courseCode.trim());
+    else nextParams.delete("CourseCode");
+    nextParams.set("page", "1");
+    setSearchParams(nextParams);
+  };
+
+  const clearSearch = () => {
+    setCourseName("");
+    setCourseCode("");
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("CourseName");
+    nextParams.delete("CourseCode");
     nextParams.set("page", "1");
     setSearchParams(nextParams);
   };
@@ -111,9 +132,25 @@ export default function CourseListPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <h1 className="mt-1 text-3xl font-bold text-slate-900">Course Management</h1>
         <div className="flex flex-wrap items-center gap-3">
-          <form onSubmit={handleSearchSubmit} className="relative">
-            <Search size={17} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by course name or code..." aria-label="Search courses" className="w-72 rounded-lg border border-slate-200 py-2.5 pl-9 pr-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" />
+          <form onSubmit={handleSearchSubmit} className="flex flex-wrap items-center gap-2">
+            <label className="relative">
+              <span className="sr-only">Search by course name</span>
+              <Search size={17} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input value={courseName} onChange={(event) => setCourseName(event.target.value)} placeholder="Course name..." aria-label="Search by course name" className="w-48 rounded-lg border border-slate-200 py-2.5 pl-9 pr-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" />
+            </label>
+            <label className="relative">
+              <span className="sr-only">Search by course code</span>
+              <Search size={17} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input value={courseCode} onChange={(event) => setCourseCode(event.target.value)} placeholder="Course code..." aria-label="Search by course code" className="w-48 rounded-lg border border-slate-200 py-2.5 pl-9 pr-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" />
+            </label>
+            <button type="submit" className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">
+              <Search size={16} /> Search
+            </button>
+            {(courseName || courseCode) && (
+              <button type="button" onClick={clearSearch} aria-label="Clear search" className="inline-flex items-center gap-1 rounded-lg px-2 py-2.5 text-sm font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-700">
+                <X size={16} /> Clear
+              </button>
+            )}
           </form>
           <button type="button" onClick={() => setCourseModalOpen(true)} className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">
             <Plus size={17} /> Create course

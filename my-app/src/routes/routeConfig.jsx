@@ -7,6 +7,8 @@ import {
   User,
  BookPlusIcon,
   GraduationCap,
+  CalendarDays,
+  MailCheck,
 } from "lucide-react";
 import { ROLES } from "@/config/constants";
 import {
@@ -24,6 +26,8 @@ import {
   SettingsPage,
   AnnouncementCenterPage,
   TeacherCourseSectionPage,
+  SchedulerPage,
+  EmailSuffixWhitelistPage,
 } from "./pageComponents";
 
 export const routeConfig = [
@@ -66,6 +70,16 @@ export const routeConfig = [
     },
   },
   {
+    path: "/email-suffix-whitelist",
+    Component: EmailSuffixWhitelistPage,
+    access: "private",
+    roles: [ROLES.ADMIN],
+    menu: {
+      label: "Email Suffix Whitelist",
+      icon: MailCheck,
+    },
+  },
+  {
     path: "/enrollment",
     Component: EnrollmentPage,
     access: "private",
@@ -103,6 +117,16 @@ export const routeConfig = [
     menu: {
       label: "Course Sections",
       icon: BookPlus,
+    },
+  },
+  {
+    path: "/schedule",
+    Component: SchedulerPage,
+    access: "private",
+    roles: [ROLES.STUDENT, ROLES.TEACHER],
+    menu: {
+      label: "Schedule",
+      icon: CalendarDays,
     },
   },
   {

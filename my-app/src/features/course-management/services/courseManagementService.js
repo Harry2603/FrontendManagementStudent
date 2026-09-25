@@ -1,11 +1,16 @@
 import axiosClient from "@/services/axiosClient";
 
 export const courseManagementService = {
-  getCourses: ({ search = "", pageNumber = 1, pageSize = 10 } = {}) =>
+  getCourses: ({
+    courseName = "",
+    courseCode = "",
+    pageNumber = 1,
+    pageSize = 10,
+  } = {}) =>
     axiosClient.get("/courses", {
       params: {
-        CourseCode: search || undefined,
-        CourseName: search || undefined,
+        CourseCode: courseCode || undefined,
+        CourseName: courseName || undefined,
         PageNumber: pageNumber,
         PageSize: pageSize,
       },

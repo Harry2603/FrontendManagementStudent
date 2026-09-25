@@ -509,9 +509,6 @@ export default function TeacherCourseSection() {
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900">
           My course sections
         </h1>
-        <p className="mt-2 text-slate-600">
-          Select a course section to view its students and scores.
-        </p>
       </div>
 
       {error && (
