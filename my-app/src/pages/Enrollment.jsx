@@ -42,7 +42,8 @@ const getPositiveQueryNumber = (value, fallback) => {
 
 export default function EnrollmentPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get("tab") === "enrolled" ? "enrolled" : "available";
+  const activeTab =
+    searchParams.get("tab") === "enrolled" ? "enrolled" : "available";
   const [availableCourses, setAvailableCourses] = useState([]);
   const [pageLoading, setPageLoading] = useState(true);
   const [pageError, setPageError] = useState("");
@@ -53,11 +54,12 @@ export default function EnrollmentPage() {
   const [cancelingSectionId, setCancelingSectionId] = useState(null);
   const [cancelCourse, setCancelCourse] = useState(null);
   const [cancelError, setCancelError] = useState("");
-  const [availablePage, setAvailablePage] = useState(1);
-  const [enrolledPage, setEnrolledPage] = useState(1);
   const [availableTotalPages, setAvailableTotalPages] = useState(1);
   const [enrolledTotalPages, setEnrolledTotalPages] = useState(1);
-  const availablePage = getPositiveQueryNumber(searchParams.get("PageNumber"), 1);
+  const availablePage = getPositiveQueryNumber(
+    searchParams.get("PageNumber"),
+    1,
+  );
   const enrolledPage = getPositiveQueryNumber(
     searchParams.get("EnrolledPageNumber"),
     1,
@@ -156,7 +158,14 @@ export default function EnrollmentPage() {
     return () => {
       ignore = true;
     };
-  }, [refreshKey, availablePage, enrolledPage, courseNameSearch, sectionCodeSearch, pageSize]);
+  }, [
+    refreshKey,
+    availablePage,
+    enrolledPage,
+    courseNameSearch,
+    sectionCodeSearch,
+    pageSize,
+  ]);
 
   const searchAvailableSections = (event) => {
     event.preventDefault();
@@ -470,7 +479,9 @@ export default function EnrollmentPage() {
           )}
           <Table
             columns={columns}
-            data={activeTab === "available" ? availableCourses : enrolledCourses}
+            data={
+              activeTab === "available" ? availableCourses : enrolledCourses
+            }
             rowKey={(course) => course.sectionId}
             emptyMessage="No course sections found"
           />
