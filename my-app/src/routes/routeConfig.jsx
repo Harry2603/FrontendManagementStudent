@@ -19,7 +19,8 @@ import {
   AccountsPage,
   EnrollmentPage,
   TranscriptPage,
-  CourseManagementPage,
+  CourseListPage,
+  CourseDetailPage,
   AnnouncementCenterPage,
   TeacherCourseSectionPage,
 } from "./pageComponents";
@@ -78,14 +79,20 @@ export const routeConfig = [
     menu: { label: "Transcript", icon: GraduationCap },
   },
   {
-    path: "/course-management",
-    Component: CourseManagementPage,
+    path: "/courses",
+    Component: CourseListPage,
     access: "private",
     roles: [ROLES.ADMIN],
     menu: {
       label: "Course Management",
       icon: BookPlus,
     },
+  },
+  {
+    path: "/courses/:id",
+    Component: CourseDetailPage,
+    access: "private",
+    roles: [ROLES.ADMIN],
   },
   {
     path: "/teacher-course-sections",

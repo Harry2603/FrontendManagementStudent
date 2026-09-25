@@ -1,26 +1,26 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import Table from "@/components/ui/Table/Table";
 import RoleTabs from "@/features/users/components/RoleTabs";
-import SectionFilter from "@/features/users/components/SectionFilter";
 import { buildAccountColumns } from "@/features/users/utils/accountColumns";
 import { userService } from "@/features/users/services/useService";
-import { courseSectionService } from "@/features/enrollment/services/courseSectionService";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
-// Tạo 1 lần ở module scope vì không phụ thuộc props/state của Accounts
-// -> tránh Table nhận "columns" object mới mỗi render (đỡ re-render thừa).
 const COLUMNS = buildAccountColumns();
+const PAGE_SIZE = 10;
+
+function getPageFromParams(value) {
+  const page = Number.parseInt(value, 10);
+  return Number.isInteger(page) && page > 0 ? page : 1;
+}
 
 export default function Accounts() {
   const { user } = useAuth();
   const role = user?.role; // "ADMIN" | "TEACHER"
-
-  const [tab, setTab] = useState("STUDENT");
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState("");
-  const [section, setSection] = useState("ALL");
-  const [sectionOptions, setSectionOptions] = useState([]);
-
   const [users, setUsers] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -47,48 +47,72 @@ export default function Accounts() {
       })
       .finally(() => {
         if (!ignore) setLoading(false);
+  const requestedTab = searchParams.get("role");
+  const activeTab =
+    requestedTab === "TEACHER" && canSeeTeacherTab ? "TEACHER" : "STUDENT";
+  const pageNumber = getPageFromParams(searchParams.get("page"));
+
+  const updateQueryParams = useCallback(
+    (updates) => {
+      const nextParams = new URLSearchParams(searchParams);
+      Object.entries(updates).forEach(([key, value]) => {
+        nextParams.set(key, String(value));
       });
+      setSearchParams(nextParams);
+    },
+    [searchParams, setSearchParams],
+  );
 
-    return () => {
-      ignore = true;
-    };
-  }, []);
+  const handleTabChange = (nextTab) => {
+    updateQueryParams({ role: nextTab, page: 1 });
+  };
 
-  // Section dropdown: chỉ Teacher có data thật (API đã có).
-  // Admin: chờ API riêng -> giữ nguyên "Tất cả section" (xem SectionFilter.jsx).
+  // Load users theo role và trang hiện tại; search/sort xử lý client-side.
   useEffect(() => {
-    if (role !== "TEACHER") return;
-
     let ignore = false;
-    courseSectionService
-      .getMySections()
-      .then((res) => {
-        if (ignore) return;
-        const codes = (res.items ?? []).map((s) => s.sectionCode);
-        setSectionOptions(Array.from(new Set(codes)));
-      })
-      .catch(() => {
-        if (!ignore) setSectionOptions([]);
-      });
+
+    queueMicrotask(() => {
+      if (ignore) return;
+      setLoading(true);
+      setError("");
+
+      userService
+        .getAllUsers({ role: activeTab, pageNumber, pageSize: PAGE_SIZE })
+        .then((res) => {
+          if (!ignore) {
+            setUsers(res.items ?? []);
+            setTotalPages(res.totalPages ?? 1);
+            if (res.pageNumber && res.pageNumber !== pageNumber) {
+              updateQueryParams({ page: res.pageNumber });
+            }
+          }
+        })
+        .catch(() => {
+          if (!ignore) setError("Không tải được danh sách user.");
+        })
+        .finally(() => {
+          if (!ignore) setLoading(false);
+        });
+    });
 
     return () => {
       ignore = true;
     };
-  }, [role]);
+  }, [activeTab, pageNumber, updateQueryParams]);
 
-  // Lọc theo tab (role) + search. CHƯA lọc theo `section` (đã chốt: để sau).
+  
   const filteredUsers = useMemo(() => {
     const keyword = search.trim().toLowerCase();
 
     return users.filter((u) => {
-      if (u.role !== tab) return false;
+      if (u.role !== activeTab) return false;
       if (!keyword) return true;
       return (
         u.fullName.toLowerCase().includes(keyword) ||
         u.email.toLowerCase().includes(keyword)
       );
     });
-  }, [users, tab, search]);
+  }, [users, activeTab, search]);
 
   return (
     <div className="space-y-4">
@@ -98,8 +122,8 @@ export default function Accounts() {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <RoleTabs
-          value={tab}
-          onChange={setTab}
+          value={activeTab}
+          onChange={handleTabChange}
           canSeeTeacherTab={canSeeTeacherTab}
         />
 
@@ -111,15 +135,6 @@ export default function Accounts() {
             onChange={(e) => setSearch(e.target.value)}
             className="rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-600"
           />
-
-          {tab === "STUDENT" && (
-            <SectionFilter
-              value={section}
-              onChange={setSection}
-              options={sectionOptions}
-              disabled={role === "ADMIN"}
-            />
-          )}
         </div>
       </div>
 
@@ -133,6 +148,30 @@ export default function Accounts() {
           data={filteredUsers}
           rowKey={(row) => row.id}
         />
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between text-sm">
+          <button
+            type="button"
+            onClick={() => updateQueryParams({ page: pageNumber - 1 })}
+            disabled={pageNumber <= 1 || loading}
+            className="cursor-pointer rounded border border-gray-300 px-3 py-1 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Trước
+          </button>
+          <span className="text-gray-500">
+            Trang {pageNumber}/{totalPages}
+          </span>
+          <button
+            type="button"
+            onClick={() => updateQueryParams({ page: pageNumber + 1 })}
+            disabled={pageNumber >= totalPages || loading}
+            className="cursor-pointer rounded border border-gray-300 px-3 py-1 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Sau
+          </button>
+        </div>
       )}
     </div>
   );

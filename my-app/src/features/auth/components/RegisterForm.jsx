@@ -158,6 +158,7 @@ export default function RegisterForm() {
         setSession(session);
       } catch (error) {
         setErrors(getRegisterError(error));
+        console.log("Register error data:", error.response?.data);
         setLoading(false);
       }
     },
