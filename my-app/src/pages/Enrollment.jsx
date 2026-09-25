@@ -1,24 +1,32 @@
 import { useEffect, useState } from "react";
-import { BookOpen, Check, LoaderCircle, X, Search } from "lucide-react";
+import {
+  BookOpen,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  LoaderCircle,
+  X,
+  Search,
+} from "lucide-react";
 import { Table } from "@/components/ui/Table";
 import PageLoader from "@/components/common/PageLoader";
 import { courseSectionService } from "@/features/enrollment/services/courseSectionService";
 
 const dayLabels = {
-  MONDAY: "Thứ 2",
-  TUESDAY: "Thứ 3",
-  WEDNESDAY: "Thứ 4",
-  THURSDAY: "Thứ 5",
-  FRIDAY: "Thứ 6",
-  SATURDAY: "Thứ 7",
-  SUNDAY: "Chủ nhật",
+  MONDAY: "Monday",
+  TUESDAY: "Tuesday",
+  WEDNESDAY: "Wednesday",
+  THURSDAY: "Thursday",
+  FRIDAY: "Friday",
+  SATURDAY: "Saturday",
+  SUNDAY: "Sunday",
 };
 
 const formatSection = (section) => ({
   ...section,
   sectionId: section.sectionId ?? section.id,
   code: section.sectionCode,
-  name: `Môn học #${section.courseId}`,
+  name: `${section.course.courseName}`,
   schedule: `${dayLabels[section.dayOfWeek] ?? section.dayOfWeek}, ${section.startPeriod} - ${section.endPeriod}`,
 });
 
@@ -31,9 +39,14 @@ export default function EnrollmentPage() {
   const [submitting, setSubmitting] = useState(false);
   const [enrollmentResult, setEnrollmentResult] = useState(null);
   const [enrolledCourses, setEnrolledCourses] = useState([]);
+  const [availablePage, setAvailablePage] = useState(1);
+  const [enrolledPage, setEnrolledPage] = useState(1);
+  const [availableTotalPages, setAvailableTotalPages] = useState(1);
+  const [enrolledTotalPages, setEnrolledTotalPages] = useState(1);
+  const pageSize = 10;
   const tabs = [
-    { id: "available", label: "Đăng ký học phần", icon: BookOpen },
-    { id: "enrolled", label: "Môn học đã đăng ký", icon: Check },
+    { id: "available", label: "Course Registration", icon: BookOpen },
+    { id: "enrolled", label: "Enrolled Courses", icon: Check },
   ];
   const [searchTerm, setSearchTerm] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
@@ -57,18 +70,26 @@ export default function EnrollmentPage() {
       setPageError("");
       try {
         const [openRes, myRes] = await Promise.all([
-          courseSectionService.getOpenSections(),
-          courseSectionService.getMySections(),
+          courseSectionService.getOpenSections({
+            pageNumber: availablePage,
+            pageSize,
+          }),
+          courseSectionService.getMySections({
+            pageNumber: enrolledPage,
+            pageSize,
+          }),
         ]);
         if (!ignore) {
           setAvailableCourses((openRes?.items ?? []).map(formatSection));
           setEnrolledCourses((myRes?.items ?? []).map(formatSection));
+          setAvailableTotalPages(Math.max(openRes?.totalPages ?? 1, 1));
+          setEnrolledTotalPages(Math.max(myRes?.totalPages ?? 1, 1));
         }
       } catch (error) {
         if (!ignore) {
           setPageError(
             error?.response?.data?.message ||
-              "Không tải được danh sách học phần, vui lòng thử lại",
+              "Unable to load course sections. Please try again.",
           );
         }
       } finally {
@@ -80,7 +101,7 @@ export default function EnrollmentPage() {
     return () => {
       ignore = true;
     };
-  }, [refreshKey]);
+  }, [refreshKey, availablePage, enrolledPage]);
   const courses = keyword
     ? sourceCourses.filter((course) =>
         [course.code, course.name, course.schedule].some((value) =>
@@ -111,7 +132,7 @@ export default function EnrollmentPage() {
       setEnrollmentResult({
         error:
           error?.response?.data?.message ||
-          "Đăng ký học phần thất bại, vui lòng thử lại.",
+          "Course registration failed. Please try again.",
       });
     } finally {
       setSubmitting(false);
@@ -123,15 +144,21 @@ export default function EnrollmentPage() {
   const basecolumns = [
     {
       key: "code",
-      header: "Mã lớp học phần",
+      header: "Section Code",
       sortable: true,
       render: (course) => (
         <span className="font-semibold text-blue-600">{course.code}</span>
       ),
     },
-    { key: "name", header: "Môn học", sortable: true },
-    { key: "capacity", header: "Sĩ số tối đa", sortable: true },
-    { key: "schedule", header: "Lịch học" },
+    { key: "name", header: "Course", sortable: true },
+    {
+      key: "capacity",
+      header: "Max Capacity",
+      sortable: true,
+      render: (course) =>
+        `${course.enrollmentCount ?? "N/A"}/${course.capacity ?? "N/A"}`,
+    },
+    { key: "schedule", header: "Schedule" },
   ];
   const enrolledSectionIds = new Set(
     enrolledCourses.map((course) => course.sectionId),
@@ -140,7 +167,7 @@ export default function EnrollmentPage() {
     ...basecolumns,
     {
       key: "action",
-      header: "Đăng ký",
+      header: "Register",
       render: (course) => {
         const isEnrolled = enrolledSectionIds.has(course.sectionId);
         return (
@@ -151,8 +178,12 @@ export default function EnrollmentPage() {
             }
             disabled={isEnrolled}
             onChange={() => toggleSection(course.sectionId)}
-            aria-label={`Chọn học phần ${course.code}`}
-            title={isEnrolled ? "Bạn đã đăng ký học phần này" : undefined}
+            aria-label={`Select course section ${course.code}`}
+            title={
+              isEnrolled
+                ? "You are already enrolled in this section"
+                : undefined
+            }
             className="h-5 w-5 cursor-pointer rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50"
           />
         );
@@ -173,7 +204,7 @@ export default function EnrollmentPage() {
           onClick={() => window.location.reload()}
           className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
         >
-          Thử lại
+          Try again
         </button>
       </div>
     );
@@ -183,13 +214,13 @@ export default function EnrollmentPage() {
     <section className="w-full space-y-6">
       <div>
         <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">
-          Học tập
+          Academics
         </p>
         <h1 className="mt-1 text-3xl font-bold text-slate-900">
-          Đăng ký học phần
+          Course Registration
         </h1>
         <p className="mt-2 text-slate-600">
-          Quản lý các học phần trong học kỳ hiện tại.
+          Manage your course sections for the current semester.
         </p>
       </div>
 
@@ -227,11 +258,11 @@ export default function EnrollmentPage() {
           <div>
             <h2 className="font-semibold text-slate-900">
               {activeTab === "available"
-                ? "Danh sách học phần mở"
-                : "Lịch học của bạn"}
+                ? "Available Course Sections"
+                : "Your Enrolled Courses"}
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              Học kỳ 1, năm học 2026 - 2027
+              Semester 1, academic year 2026 - 2027
             </p>
           </div>
           <div className="flex items-center gap-2 text-sm text-slate-500">
@@ -244,7 +275,7 @@ export default function EnrollmentPage() {
               {submitting && (
                 <LoaderCircle size={16} className="animate-spin" />
               )}
-              Đăng ký
+              Register
             </button>
           </div>
         </div>
@@ -258,15 +289,15 @@ export default function EnrollmentPage() {
               type="text"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Tìm theo mã lớp, môn học, lịch học..."
-              aria-label="Tìm kiếm học phần"
+              placeholder="Search by section code, course, or schedule..."
+              aria-label="Search course sections"
               className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-10 pr-9 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             />
             {searchTerm && (
               <button
                 type="button"
                 onClick={() => setSearchTerm("")}
-                aria-label="Xóa tìm kiếm"
+                aria-label="Clear search"
                 className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700"
               >
                 <X size={16} />
@@ -279,8 +310,52 @@ export default function EnrollmentPage() {
             columns={columns}
             data={courses}
             rowKey={(course) => course.sectionId}
-            emptyMessage="Chưa có học phần"
+            emptyMessage="No course sections found"
           />
+        </div>
+        <div className="flex items-center justify-center gap-4 border-t border-slate-200 px-5 py-3 text-sm">
+          <button
+            type="button"
+            onClick={() =>
+              activeTab === "available"
+                ? setAvailablePage((page) => page - 1)
+                : setEnrolledPage((page) => page - 1)
+            }
+            disabled={
+              pageLoading ||
+              (activeTab === "available"
+                ? availablePage === 1
+                : enrolledPage === 1)
+            }
+            className="inline-flex items-center gap-1 font-medium text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:text-slate-400"
+          >
+            <ChevronLeft size={16} />
+            Previous
+          </button>
+          <span className="text-slate-600">
+            Page {activeTab === "available" ? availablePage : enrolledPage} of{" "}
+            {activeTab === "available"
+              ? availableTotalPages
+              : enrolledTotalPages}
+          </span>
+          <button
+            type="button"
+            onClick={() =>
+              activeTab === "available"
+                ? setAvailablePage((page) => page + 1)
+                : setEnrolledPage((page) => page + 1)
+            }
+            disabled={
+              pageLoading ||
+              (activeTab === "available"
+                ? availablePage >= availableTotalPages
+                : enrolledPage >= enrolledTotalPages)
+            }
+            className="inline-flex items-center gap-1 font-medium text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:text-slate-400"
+          >
+            Next
+            <ChevronRight size={16} />
+          </button>
         </div>
       </div>
 
@@ -303,12 +378,12 @@ export default function EnrollmentPage() {
                 id="enrollment-result-title"
                 className="text-lg font-semibold text-slate-900"
               >
-                Kết quả đăng ký
+                Registration Results
               </h2>
               <button
                 type="button"
                 onClick={() => setEnrollmentResult(null)}
-                aria-label="Đóng"
+                aria-label="Close"
                 className="rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
               >
                 <X size={20} />
@@ -317,7 +392,7 @@ export default function EnrollmentPage() {
 
             {enrollmentResult.error ? (
               <p className="border-t border-slate-100 px-6 py-5 text-base text-red-600">
-                Đăng ký thất bại
+                Registration failed
               </p>
             ) : (
               <ul className="max-h-[65vh] divide-y divide-slate-100 overflow-y-auto border-t border-slate-100">
@@ -339,7 +414,7 @@ export default function EnrollmentPage() {
                         }`}
                       >
                         {isSuccess ? <Check size={15} /> : <X size={15} />}
-                        {isSuccess ? "Thành công" : "Thất bại"}
+                        {isSuccess ? "Success" : "Failed"}
                       </span>
                     </li>
                   );

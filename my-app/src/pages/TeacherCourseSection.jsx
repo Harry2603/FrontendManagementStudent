@@ -1,22 +1,31 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, BookOpen, CalendarDays, Pencil, Users } from "lucide-react";
+import {
+  ArrowLeft,
+  BookOpen,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Pencil,
+  Search,
+  Users,
+} from "lucide-react";
 import { Table } from "@/components/ui/Table";
 import PageLoader from "@/components/common/PageLoader";
 import { courseSectionService } from "@/features/enrollment/services/courseSectionService";
 
 const dayLabels = {
-  MONDAY: "Thứ 2",
-  TUESDAY: "Thứ 3",
-  WEDNESDAY: "Thứ 4",
-  THURSDAY: "Thứ 5",
-  FRIDAY: "Thứ 6",
-  SATURDAY: "Thứ 7",
-  SUNDAY: "Chủ nhật",
+  MONDAY: "Monday",
+  TUESDAY: "Tuesday",
+  WEDNESDAY: "Wednesday",
+  THURSDAY: "Thursday",
+  FRIDAY: "Friday",
+  SATURDAY: "Saturday",
+  SUNDAY: "Sunday",
 };
 
 const formatDate = (date) => {
   if (!date) return "-";
-  return new Intl.DateTimeFormat("vi-VN").format(new Date(date));
+  return new Intl.DateTimeFormat("en-US").format(new Date(date));
 };
 
 const formatSchedule = (section) =>
@@ -26,9 +35,9 @@ const formatError = (error, fallback) =>
   error.response?.data?.message ?? error.response?.data?.title ?? fallback;
 
 const defaultScoreComponents = [
-  { componentId: "default-attendance", componentName: "Chuyên cần", weight: 0 },
-  { componentId: "default-midterm", componentName: "Giữa kỳ", weight: 0 },
-  { componentId: "default-final", componentName: "Cuối kỳ", weight: 0 },
+  { componentId: "default-attendance", componentName: "Attendance", weight: 0 },
+  { componentId: "default-midterm", componentName: "Midterm", weight: 0 },
+  { componentId: "default-final", componentName: "Final", weight: 0 },
   { componentId: "default-lab", componentName: "Lab", weight: 0 },
 ];
 
@@ -65,7 +74,7 @@ function ScoreCell({ value, onChange }) {
       step="1"
       value={value ?? ""}
       onChange={(event) => onChange(event.target.value)}
-      className="w-20 rounded-md border border-indigo-300 px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-indigo-200"
+      className="w-20 rounded-md border border-blue-300 px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-blue-200"
     />
   );
 }
@@ -88,19 +97,34 @@ export default function TeacherCourseSection() {
   const [weightError, setWeightError] = useState("");
   const [savingStudentId, setSavingStudentId] = useState(null);
   const [scoreError, setScoreError] = useState("");
+  const [finalizingGrades, setFinalizingGrades] = useState(false);
+  const [sectionSearchInput, setSectionSearchInput] = useState("");
+  const [sectionCodeSearch, setSectionCodeSearch] = useState("");
+  const [pageNumber, setPageNumber] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const pageSize = 10;
 
   useEffect(() => {
     let active = true;
     setLoadingSections(true);
+    setError("");
     courseSectionService
-      .getTeacherSections()
+      .getTeacherSections({
+        sectionCode: sectionCodeSearch,
+        pageNumber,
+        pageSize,
+      })
       .then((response) => {
-        if (active) setSections(response?.items ?? []);
+        if (!active) return;
+        setSections(response?.items ?? []);
+        const nextTotalPages = Math.max(response?.totalPages ?? 1, 1);
+        setTotalPages(nextTotalPages);
+        if (pageNumber > nextTotalPages) setPageNumber(nextTotalPages);
       })
       .catch((requestError) => {
         if (active)
           setError(
-            formatError(requestError, "Không thể tải danh sách lớp học."),
+            formatError(requestError, "Unable to load course sections."),
           );
       })
       .finally(() => {
@@ -110,13 +134,19 @@ export default function TeacherCourseSection() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [sectionCodeSearch, pageNumber]);
 
   const openSection = (section) => {
     setSelectedSection(section);
     setSectionDetail(null);
     setStudents([]);
     setError("");
+  };
+
+  const searchSections = (event) => {
+    event.preventDefault();
+    setPageNumber(1);
+    setSectionCodeSearch(sectionSearchInput.trim());
   };
 
   useEffect(() => {
@@ -135,7 +165,7 @@ export default function TeacherCourseSection() {
           setError(
             formatError(
               requestError,
-              "Không thể tải thông tin sinh viên của lớp.",
+              "Unable to load the students in this course section.",
             ),
           );
       })
@@ -182,6 +212,25 @@ export default function TeacherCourseSection() {
     }));
   };
 
+  const finalizeGrades = async () => {
+    if (!selectedSection || finalizingGrades) return;
+
+    setFinalizingGrades(true);
+    setError("");
+    try {
+      await courseSectionService.finalizeGrades(selectedSection.id);
+      const response = await courseSectionService.getTeacherSectionDetail(
+        selectedSection.id,
+      );
+      setSectionDetail(response);
+      setStudents(response?.students?.items ?? []);
+    } catch (requestError) {
+      setError(formatError(requestError, "Unable to finalize grades."));
+    } finally {
+      setFinalizingGrades(false);
+    }
+  };
+
   const openStudentEditor = (student) => {
     setScoreError("");
     setEditingStudent(student);
@@ -217,7 +266,7 @@ export default function TeacherCourseSection() {
           Number(value) > 100),
     );
     if (hasInvalidScore) {
-      setScoreError("Điểm phải nằm trong khoảng từ 1 đến 100.");
+      setScoreError("Scores must be between 1 and 100.");
       return;
     }
 
@@ -230,7 +279,7 @@ export default function TeacherCourseSection() {
           score.scoreId ?? score.studentScoreId ?? score.id;
         if (!studentScoreId) {
           throw new Error(
-            `Thiếu studentScoreId cho component ${score.componentId}.`,
+            `Missing studentScoreId for component ${score.componentId}.`,
           );
         }
         return {
@@ -274,7 +323,9 @@ export default function TeacherCourseSection() {
       );
       setEditingStudent(null);
     } catch (requestError) {
-      setScoreError(formatError(requestError, "Không thể lưu điểm sinh viên."));
+      setScoreError(
+        formatError(requestError, "Unable to save the student scores."),
+      );
     } finally {
       setSavingStudentId(null);
     }
@@ -305,7 +356,7 @@ export default function TeacherCourseSection() {
       );
     } catch (requestError) {
       setWeightError(
-        formatError(requestError, "Không thể tải trọng số của course section."),
+        formatError(requestError, "Unable to load the course section weights."),
       );
     } finally {
       setLoadingWeights(false);
@@ -323,7 +374,9 @@ export default function TeacherCourseSection() {
     );
     const totalWeight = weights.reduce((total, weight) => total + weight, 0);
     if (gradeComponents.length !== 4) {
-      setWeightError("Mỗi course section phải có đúng 4 grade component.");
+      setWeightError(
+        "Each course section must have exactly 4 grade components.",
+      );
       return;
     }
     if (
@@ -331,12 +384,12 @@ export default function TeacherCourseSection() {
         (weight) => Number.isNaN(weight) || weight < 0 || weight > 100,
       )
     ) {
-      setWeightError("Trọng số phải nằm trong khoảng từ 0 đến 100.");
+      setWeightError("Weights must be between 0 and 100.");
       return;
     }
     if (totalWeight !== 100) {
       setWeightError(
-        `Tổng trọng số hiện tại là ${totalWeight}%. Tổng phải bằng 100%.`,
+        `The current total weight is ${totalWeight}%. The total must equal 100%.`,
       );
       return;
     }
@@ -378,7 +431,7 @@ export default function TeacherCourseSection() {
       closeWeightEditor();
     } catch (requestError) {
       setWeightError(
-        formatError(requestError, "Không thể lưu trọng số của course section."),
+        formatError(requestError, "Unable to save the course section weights."),
       );
     } finally {
       setSavingWeights(false);
@@ -386,10 +439,10 @@ export default function TeacherCourseSection() {
   };
 
   const studentColumns = [
-    { key: "studentUserRoleId", header: "Mã sinh viên", sortable: true },
+    { key: "studentUserRoleId", header: "Student ID", sortable: true },
     {
       key: "fullName",
-      header: "Sinh viên",
+      header: "Student",
       sortable: true,
       render: (row) => (
         <div>
@@ -414,12 +467,36 @@ export default function TeacherCourseSection() {
     })),
     {
       key: "total",
-      header: "Tổng kết",
+      header: "Calculated Total",
       render: (row) => (
         <span className="font-semibold text-slate-900">
           {getWeightedTotal(row.scores)}
         </span>
       ),
+    },
+    {
+      key: "finalScore",
+      header: "Final Score",
+      render: (row) => (
+        <span className="font-semibold text-blue-600">
+          {row.finalResult?.finalScore ?? "-"}
+        </span>
+      ),
+    },
+    {
+      key: "letterGrade",
+      header: "Letter Grade",
+      render: (row) => row.finalResult?.letterGrade ?? "-",
+    },
+    {
+      key: "gradePoint",
+      header: "Grade Point",
+      render: (row) => row.finalResult?.gradePoint ?? "-",
+    },
+    {
+      key: "resultStatus",
+      header: "Result Status",
+      render: (row) => row.finalResult?.resultStatus ?? "-",
     },
   ];
 
@@ -428,14 +505,12 @@ export default function TeacherCourseSection() {
   return (
     <section className="space-y-6">
       <div>
-        <p className="text-sm font-medium text-indigo-600">
-          Khu vực giảng viên
-        </p>
+        <p className="text-sm font-medium text-blue-600">Teacher area</p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900">
-          Lớp học của tôi
+          My course sections
         </h1>
         <p className="mt-2 text-slate-600">
-          Chọn một course section để xem danh sách sinh viên và điểm.
+          Select a course section to view its students and scores.
         </p>
       </div>
 
@@ -453,40 +528,71 @@ export default function TeacherCourseSection() {
       {!selectedSection ? (
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-slate-900">
-            <BookOpen size={20} className="text-indigo-600" />
-            <h2 className="text-lg font-semibold">
-              Course section đang phụ trách
-            </h2>
+            <BookOpen size={20} className="text-blue-600" />
+            <h2 className="text-lg font-semibold">Assigned course sections</h2>
           </div>
+          <form onSubmit={searchSections} className="flex gap-2">
+            <label className="relative block flex-1">
+              <span className="sr-only">Search by section code</span>
+              <Search
+                size={17}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+              <input
+                type="search"
+                value={sectionSearchInput}
+                onChange={(event) => setSectionSearchInput(event.target.value)}
+                placeholder="Search by section code..."
+                className="w-full rounded-md border border-slate-300 py-2 pl-9 pr-3 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
+              />
+            </label>
+            <button
+              type="submit"
+              className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+            >
+              <Search size={16} />
+              Search
+            </button>
+          </form>
           <Table
             columns={[
-              { key: "sectionCode", header: "Mã lớp", sortable: true },
-              { key: "courseId", header: "Course ID", sortable: true },
+              { key: "sectionCode", header: "Section code", sortable: true },
+              {
+                key: "Course",
+                header: "Course Name",
+                sortable: true,
+                render: (row) => row.course.courseName,
+              },
               { key: "semesterId", header: "Semester ID", sortable: true },
               {
                 key: "schedule",
-                header: "Lịch học",
+                header: "Schedule",
                 render: (row) => formatSchedule(row),
               },
               {
                 key: "dates",
-                header: "Thời gian",
+                header: "Dates",
                 render: (row) =>
                   `${formatDate(row.startDate)} - ${formatDate(row.endDate)}`,
               },
-              { key: "capacity", header: "Sức chứa", sortable: true },
-              { key: "status", header: "Trạng thái", sortable: true },
+              {
+                key: "capacity",
+                header: "Capacity",
+                sortable: true,
+                render: (row) => `${row.enrollmentCount}/${row.capacity}`,
+              },
+              { key: "status", header: "Status", sortable: true },
               {
                 key: "actions",
-                header: "Thao tác",
+                header: "Actions",
                 render: (row) => (
                   <button
                     type="button"
                     onClick={(event) => openWeightEditor(event, row)}
-                    className="inline-flex items-center gap-1.5 font-medium text-indigo-600 hover:text-indigo-800"
+                    className="inline-flex items-center gap-1.5 font-medium text-blue-600 hover:text-blue-800"
                   >
                     <Pencil size={15} />
-                    Sửa trọng số
+                    Edit weights
                   </button>
                 ),
               },
@@ -494,23 +600,46 @@ export default function TeacherCourseSection() {
             data={sections}
             rowKey={(row) => row.id}
             onRowClick={openSection}
-            emptyMessage="Bạn chưa được phân công course section nào"
+            emptyMessage="You have no assigned course sections"
           />
+          <div className="flex items-center justify-center gap-3 text-sm">
+            <button
+              type="button"
+              onClick={() => setPageNumber((page) => page - 1)}
+              disabled={pageNumber === 1 || loadingSections}
+              className="inline-flex items-center gap-1 font-medium text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:text-slate-400"
+            >
+              <ChevronLeft size={17} />
+              Previous
+            </button>
+            <span className="text-slate-600">
+              Page {pageNumber} of {totalPages}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPageNumber((page) => page + 1)}
+              disabled={pageNumber >= totalPages || loadingSections}
+              className="inline-flex items-center gap-1 font-medium text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:text-slate-400"
+            >
+              Next
+              <ChevronRight size={17} />
+            </button>
+          </div>
         </div>
       ) : (
         <div className="space-y-5">
           <button
             type="button"
             onClick={() => setSelectedSection(null)}
-            className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-indigo-600"
+            className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-blue-600"
           >
             <ArrowLeft size={17} />
-            Quay lại danh sách lớp
+            Back to course sections
           </button>
           <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold text-indigo-600">
+                <p className="text-sm font-semibold text-blue-600">
                   {sectionDetail?.sectionCode ?? selectedSection.sectionCode}
                 </p>
                 <h2 className="mt-1 text-2xl font-bold text-slate-900">
@@ -526,7 +655,7 @@ export default function TeacherCourseSection() {
                     <Users size={16} />
                     {sectionDetail?.students?.totalItems ??
                       students.length}{" "}
-                    sinh viên
+                    students
                   </span>
                   <span>
                     {formatDate(selectedSection.startDate)} -{" "}
@@ -534,7 +663,7 @@ export default function TeacherCourseSection() {
                   </span>
                 </div>
               </div>
-              <span className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-700">
+              <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
                 {selectedSection.status}
               </span>
             </div>
@@ -543,18 +672,26 @@ export default function TeacherCourseSection() {
             <PageLoader />
           ) : (
             <>
-              <div className="flex items-center gap-2 text-slate-900">
-                <Users size={20} className="text-indigo-600" />
-                <h2 className="text-lg font-semibold">
-                  Danh sách sinh viên và điểm
-                </h2>
+              <div className="flex items-center justify-between gap-3 text-slate-900">
+                <div className="flex items-center gap-2">
+                  <Users size={20} className="text-blue-600" />
+                  <h2 className="text-lg font-semibold">Students and scores</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={finalizeGrades}
+                  disabled={finalizingGrades}
+                  className="rounded-md bg-blue-600 px-8 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+                >
+                  {finalizingGrades ? "Finalizing..." : "Summary"}
+                </button>
               </div>
               <Table
                 columns={studentColumns}
                 data={students}
                 rowKey={(row) => row.studentUserRoleId}
                 onRowClick={openStudentEditor}
-                emptyMessage="Lớp chưa có sinh viên"
+                emptyMessage="This course section has no students"
               />
             </>
           )}
@@ -571,14 +708,14 @@ export default function TeacherCourseSection() {
           <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold text-indigo-600">
+                <p className="text-sm font-semibold text-blue-600">
                   {editingStudent.fullName}
                 </p>
                 <h2
                   id="student-score-editor-title"
                   className="mt-1 text-xl font-bold text-slate-900"
                 >
-                  Sửa điểm sinh viên
+                  Edit student scores
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
                   {editingStudent.email}
@@ -589,7 +726,7 @@ export default function TeacherCourseSection() {
                 onClick={closeStudentEditor}
                 disabled={savingStudentId === editingStudent.studentUserRoleId}
                 className="text-2xl leading-none text-slate-400 hover:text-slate-700"
-                aria-label="Đóng"
+                aria-label="Close"
               >
                 ×
               </button>
@@ -611,7 +748,7 @@ export default function TeacherCourseSection() {
                         {component.componentName}
                       </span>
                       <span className="text-xs text-slate-500">
-                        Trọng số: {component.weight}%
+                        Weight: {component.weight}%
                       </span>
                     </span>
                     <ScoreCell
@@ -643,17 +780,17 @@ export default function TeacherCourseSection() {
                 disabled={savingStudentId === editingStudent.studentUserRoleId}
                 className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
               >
-                Hủy
+                Cancel
               </button>
               <button
                 type="button"
                 onClick={() => saveScores(editingStudent)}
                 disabled={savingStudentId === editingStudent.studentUserRoleId}
-                className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {savingStudentId === editingStudent.studentUserRoleId
-                  ? "Đang lưu..."
-                  : "Lưu điểm"}
+                  ? "Saving..."
+                  : "Save scores"}
               </button>
             </div>
           </div>
@@ -670,17 +807,18 @@ export default function TeacherCourseSection() {
           <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold text-indigo-600">
+                <p className="text-sm font-semibold text-blue-600">
                   {editingWeightsSection.sectionCode}
                 </p>
                 <h2
                   id="weight-editor-title"
                   className="mt-1 text-xl font-bold text-slate-900"
                 >
-                  Sửa trọng số điểm
+                  Edit score weights
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Course section cần đúng 4 component, tổng trọng số bằng 100%.
+                  A course section must have exactly 4 components with a total
+                  weight of 100%.
                 </p>
               </div>
               <button
@@ -688,7 +826,7 @@ export default function TeacherCourseSection() {
                 onClick={closeWeightEditor}
                 disabled={savingWeights}
                 className="text-2xl leading-none text-slate-400 hover:text-slate-700"
-                aria-label="Đóng"
+                aria-label="Close"
               >
                 ×
               </button>
@@ -712,7 +850,7 @@ export default function TeacherCourseSection() {
                             {component.name ?? `Component ${componentId}`}
                           </span>
                           <span className="text-xs text-slate-500">
-                            ID: {componentId}
+                            Component ID: {componentId}
                           </span>
                         </span>
                         <span className="flex items-center gap-2">
@@ -728,7 +866,7 @@ export default function TeacherCourseSection() {
                                 [componentId]: event.target.value,
                               }))
                             }
-                            className="w-24 rounded-md border border-slate-300 px-3 py-2 text-right outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                            className="w-24 rounded-md border border-blue-300 px-3 py-2 text-right outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                           />
                           <span className="text-sm text-slate-500">%</span>
                         </span>
@@ -746,15 +884,15 @@ export default function TeacherCourseSection() {
                     disabled={savingWeights}
                     className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
                   >
-                    Hủy
+                    Cancel
                   </button>
                   <button
                     type="button"
                     onClick={saveWeights}
                     disabled={savingWeights || loadingWeights}
-                    className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {savingWeights ? "Đang lưu..." : "Lưu trọng số"}
+                    {savingWeights ? "Saving..." : "Save weights"}
                   </button>
                 </div>
               </>
