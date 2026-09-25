@@ -3,6 +3,7 @@ import axiosClient from "@/services/axiosClient";
 export const courseManagementService = {
   getCourses: ({ pageNumber = 1, pageSize = 10 } = {}) =>
     axiosClient.get("/courses", { params: { PageNumber: pageNumber, PageSize: pageSize } }),
+  getCourseById: (courseId) => axiosClient.get(`/courses/${courseId}`),
   getCourseSections: ({ courseId, pageNumber = 1, pageSize = 100 }) =>
     axiosClient.get("/course-sections", {
       params: { CourseId: courseId, PageNumber: pageNumber, PageSize: pageSize },
