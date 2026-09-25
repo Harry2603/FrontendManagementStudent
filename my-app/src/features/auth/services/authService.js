@@ -14,4 +14,9 @@ export const authService = {
   register: (payload) => axiosClient.post("/auth/register", payload),
   getMe: () => axiosClient.get("/users/me"),
   updateProfile: (payload) => axiosClient.put("/users/profile", payload),
+  uploadAvatar: (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return axiosClient.post("/users/me/avatar", formData);
+  },
 };
