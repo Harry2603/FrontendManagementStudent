@@ -27,6 +27,12 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
+  const updateUser = useCallback((nextUser) => {
+    const session = authStorage.get();
+    if (session) authStorage.set({ ...session, user: nextUser });
+    setUser(nextUser);
+  }, []);
+
   // Axios gặp 401 (token hết hạn) thì gọi logout.
   useEffect(() => {
     setUnauthorizedHandler(logout);
@@ -34,8 +40,8 @@ export function AuthProvider({ children }) {
   }, [logout]);
 
   const value = useMemo(
-    () => ({ user, isAuthenticated: !!user, setSession, logout }),
-    [user, setSession, logout],
+    () => ({ user, isAuthenticated: !!user, setSession, updateUser, logout }),
+    [user, setSession, updateUser, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
