@@ -45,4 +45,6 @@ export const courseSectionService = {
   finalizeGrades: (sectionId) =>
     axiosClient.patch(`/teacher/courseSections/${sectionId}/grades/finalize`),
   postEnrolls: (payload) => axiosClient.post(`/enrollment/batch`, payload),
+  deleteEnrollment: (sectionId) =>
+    axiosClient.delete(`/enrollment/${sectionId}`),
 };
