@@ -10,6 +10,7 @@ export default function CourseDetailPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const pageNumber = getPageFromParams(searchParams.get("page"));
+  const sectionSearchQuery = searchParams.get("search") ?? "";
   const [course, setCourse] = useState(null);
   const [courseLoading, setCourseLoading] = useState(true);
   const [courseError, setCourseError] = useState("");
@@ -28,6 +29,11 @@ export default function CourseDetailPage() {
   const [sectionError, setSectionError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [sectionRefreshKey, setSectionRefreshKey] = useState(0);
+  const [sectionSearch, setSectionSearch] = useState(sectionSearchQuery);
+
+  useEffect(() => {
+    setSectionSearch(sectionSearchQuery);
+  }, [sectionSearchQuery]);
 
   const updatePage = useCallback((page) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -60,7 +66,7 @@ export default function CourseDetailPage() {
       setSectionsError("");
       try {
         const [firstSectionPage, firstTeacherPage] = await Promise.all([
-          courseManagementService.getCourseSections({ courseId: id, pageNumber, pageSize: 10 }),
+          courseManagementService.getCourseSections({ courseId: id, sectionCode: sectionSearchQuery, pageNumber, pageSize: 10 }),
           courseManagementService.getTeachers({ pageSize: 100 }),
         ]);
         const remainingTeacherPages = await Promise.all(Array.from(
@@ -85,7 +91,7 @@ export default function CourseDetailPage() {
     }
     loadCourseSections();
     return () => { ignore = true; };
-  }, [id, pageNumber, sectionRefreshKey, updatePage]);
+  }, [id, pageNumber, sectionRefreshKey, sectionSearchQuery, updatePage]);
 
   useEffect(() => {
     if (!sectionModalOpen) return undefined;
@@ -124,6 +130,13 @@ export default function CourseDetailPage() {
     setTeacherSearch("");
     setSectionError("");
     setSectionModalOpen(true);
+  };
+  const handleSectionSearchSubmit = (event) => {
+    event.preventDefault();
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("search", sectionSearch.trim());
+    nextParams.set("page", "1");
+    setSearchParams(nextParams);
   };
   const closeSectionModal = () => {
     if (sectionSubmitting) return;
@@ -186,6 +199,12 @@ export default function CourseDetailPage() {
       </div>
       {successMessage && <p role="status" className="flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700"><CheckCircle2 size={17} />{successMessage}</p>}
       <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+        <form onSubmit={handleSectionSearchSubmit} className="border-b border-slate-200 px-5 py-4">
+          <div className="relative max-w-sm">
+            <Search size={17} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input value={sectionSearch} onChange={(event) => setSectionSearch(event.target.value)} placeholder="Search by section code..." aria-label="Search sections" className="w-full rounded-lg border border-slate-200 py-2.5 pl-9 pr-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" />
+          </div>
+        </form>
         {sectionsError && <p role="alert" className="border-b border-slate-200 px-5 py-3 text-sm text-red-600">{sectionsError}</p>}
         {sectionsLoading ? <div className="flex justify-center px-5 py-14"><LoaderCircle className="animate-spin text-blue-600" size={24} /></div> : <div className="overflow-x-auto"><table className="w-full min-w-[960px] text-left"><thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500"><tr><th className="px-5 py-3">Section</th><th className="px-5 py-3">Teacher</th><th className="px-5 py-3">Schedule</th><th className="px-5 py-3 text-center">Capacity</th><th className="px-5 py-3">Dates</th><th className="px-5 py-3 text-center">Status</th></tr></thead><tbody className="divide-y divide-slate-100">{courseSections.length === 0 ? <tr><td colSpan="6" className="px-5 py-12 text-center text-sm text-slate-500">No course sections have been created yet.</td></tr> : courseSections.map((item) => <tr key={item.id} className="hover:bg-slate-50"><td className="px-5 py-4 text-sm font-semibold text-blue-600">{item.sectionCode ?? "_"}</td><td className="px-5 py-4 text-sm"><p className="font-medium text-slate-800">Teacher: {item.teacher?.fullName ?? "_"}</p><p className="mt-0.5 text-xs text-slate-500">{item.teacher?.email ?? "_"}</p><p className="mt-0.5 text-xs text-slate-500">{item.teacher?.phone ?? "_"}</p></td><td className="px-5 py-4 text-sm text-slate-700">{DAYS.find((day) => day.value === item.dayOfWeek)?.label ?? item.dayOfWeek} · Period {item.startPeriod}–{item.endPeriod}</td><td className="px-5 py-4 text-center text-sm font-medium text-slate-700">{item.enrollmentCount ?? 0} / {item.capacity ?? "_"}</td><td className="px-5 py-4 text-sm text-slate-700">{item.startDate ?? "_"} – {item.endDate ?? "_"}</td><td className="px-5 py-4 text-center"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${item.status === "OPEN" ? "bg-emerald-50 text-emerald-700" : item.status === "CANCELLED" ? "bg-red-50 text-red-700" : "bg-slate-100 text-slate-600"}`}>{item.status ?? "_"}</span></td></tr>)}</tbody></table></div>}
         {totalPages > 1 && <div className="flex items-center justify-end gap-3 border-t border-slate-200 px-5 py-3 text-sm"><button type="button" disabled={pageNumber <= 1 || sectionsLoading} onClick={() => updatePage(pageNumber - 1)} className="inline-flex cursor-pointer items-center gap-1 text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:text-slate-400"><ChevronLeft size={16} /> Previous</button><span className="text-slate-500">Page {pageNumber} of {totalPages} ({totalItems} sections)</span><button type="button" disabled={pageNumber >= totalPages || sectionsLoading} onClick={() => updatePage(pageNumber + 1)} className="inline-flex cursor-pointer items-center gap-1 text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:text-slate-400">Next <ChevronRight size={16} /></button></div>}

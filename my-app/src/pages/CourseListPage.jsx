@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { CheckCircle2, ChevronLeft, ChevronRight, LoaderCircle, Plus } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, LoaderCircle, Plus, Search } from "lucide-react";
 import PageLoader from "@/components/common/PageLoader";
 import { courseManagementService } from "@/features/course-management/services/courseManagementService";
 import {
@@ -14,6 +14,8 @@ export default function CourseListPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const pageNumber = getPageFromParams(searchParams.get("page"));
+  const searchQuery = searchParams.get("search") ?? "";
+  const [search, setSearch] = useState(searchQuery);
   const [courses, setCourses] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -24,6 +26,10 @@ export default function CourseListPage() {
   const [courseSubmitting, setCourseSubmitting] = useState(false);
   const [courseError, setCourseError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+
+  useEffect(() => {
+    setSearch(searchQuery);
+  }, [searchQuery]);
 
   const updatePage = useCallback((page) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -37,7 +43,7 @@ export default function CourseListPage() {
       setPageLoading(true);
       setPageError("");
       try {
-        const response = await courseManagementService.getCourses({ pageNumber });
+        const response = await courseManagementService.getCourses({ search: searchQuery, pageNumber });
         if (!ignore) {
           setCourses(response?.items ?? []);
           setTotalPages(response?.totalPages ?? 1);
@@ -51,7 +57,15 @@ export default function CourseListPage() {
     }
     loadCourses();
     return () => { ignore = true; };
-  }, [pageNumber]);
+  }, [pageNumber, searchQuery]);
+
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("search", search.trim());
+    nextParams.set("page", "1");
+    setSearchParams(nextParams);
+  };
 
   const closeCourseModal = () => {
     if (courseSubmitting) return;
@@ -96,9 +110,15 @@ export default function CourseListPage() {
     <section className="w-full space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <h1 className="mt-1 text-3xl font-bold text-slate-900">Course Management</h1>
-        <button type="button" onClick={() => setCourseModalOpen(true)} className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">
-          <Plus size={17} /> Create course
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <form onSubmit={handleSearchSubmit} className="relative">
+            <Search size={17} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by course name or code..." aria-label="Search courses" className="w-72 rounded-lg border border-slate-200 py-2.5 pl-9 pr-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" />
+          </form>
+          <button type="button" onClick={() => setCourseModalOpen(true)} className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">
+            <Plus size={17} /> Create course
+          </button>
+        </div>
       </div>
       {successMessage && <p role="status" className="flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700"><CheckCircle2 size={17} />{successMessage}</p>}
       <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
