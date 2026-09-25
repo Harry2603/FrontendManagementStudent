@@ -13,6 +13,7 @@ import { authService } from "../services/authService";
 import { useAuth } from "../hooks/useAuth";
 import { getLoginError } from "../utils/authErrors";
 import animatedArtwork from "@/assets/svgviewer-output.svg";
+import FaceCamera from "@/features/face/components/FaceCamera";
 
 const INITIAL_VALUES = { email: "", password: "" };
 const INITIAL_RESET_VALUES = {
@@ -36,7 +37,6 @@ export default function LoginForm() {
   const [resetError, setResetError] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
   const [resetToken, setResetToken] = useState("");
-  const [faceFile, setFaceFile] = useState(null);
 
   const closeResetModal = useCallback(() => {
     setShowResetModal(false);
@@ -44,7 +44,6 @@ export default function LoginForm() {
     setResetValues(INITIAL_RESET_VALUES);
     setResetError("");
     setResetToken("");
-    setFaceFile(null);
   }, []);
 
   const handleChange = useCallback((e) => {
@@ -159,6 +158,11 @@ export default function LoginForm() {
       return;
     }
 
+    if (password.length < 8 || password.length > 128) {
+      setResetError("Password must be between 8 and 128 characters.");
+      return;
+    }
+
     if (password !== confirmPassword) {
       setResetError("The new passwords do not match.");
       return;
@@ -173,13 +177,18 @@ export default function LoginForm() {
     setResetError("");
     try {
       await authService.confirmPasswordReset({
-        token: resetToken,
         resetToken,
-        password,
         newPassword: password,
       });
       closeResetModal();
     } catch (error) {
+      console.error("[Password reset] confirmation failed", {
+        status: error?.response?.status,
+        data: error?.response?.data,
+        message: error?.message,
+        code: error?.code,
+        url: error?.config?.url,
+      });
       setResetError(
         error?.response?.data?.message ||
           "Unable to reset the password. Please try again.",
@@ -194,44 +203,51 @@ export default function LoginForm() {
     resetValues.newPassword,
   ]);
 
-  const handleFaceReset = useCallback(async () => {
-    const email = resetValues.email.trim();
-    if (!email) {
-      setResetError("Please enter your email before face verification.");
-      return;
-    }
-
-    if (!faceFile) {
-      setResetError("Please upload a face image to continue.");
-      return;
-    }
-
-    setResetLoading(true);
-    setResetError("");
-    try {
-      const response = await authService.verifyPasswordResetFace(
-        email,
-        faceFile,
-      );
-      const token =
-        response?.token ??
-        response?.resetToken ??
-        response?.data?.token ??
-        response?.data?.resetToken ??
-        "";
-      if (token) {
-        setResetToken(token);
+  const handleFaceReset = useCallback(
+    async (frames) => {
+      const email = resetValues.email.trim();
+      if (!email) {
+        setResetError("Please enter your email before face verification.");
+        return;
       }
-      setResetMode("confirm");
-    } catch (error) {
-      setResetError(
-        error?.response?.data?.message ||
-          "Face verification failed. Please try again.",
-      );
-    } finally {
-      setResetLoading(false);
-    }
-  }, [faceFile, resetValues.email]);
+
+      if (!frames?.length) {
+        setResetError("Unable to capture a face image. Please try again.");
+        return;
+      }
+
+      setResetLoading(true);
+      setResetError("");
+      try {
+        const response = await authService.verifyPasswordResetFace(frames);
+        const token =
+          response?.token ??
+          response?.resetToken ??
+          response?.data?.token ??
+          response?.data?.resetToken ??
+          "";
+        if (token) {
+          setResetToken(token);
+        }
+        setResetMode("confirm");
+      } catch (error) {
+        console.error("[Face reset] verification failed", {
+          status: error?.response?.status,
+          data: error?.response?.data,
+          message: error?.message,
+          code: error?.code,
+          url: error?.config?.url,
+        });
+        setResetError(
+          error?.response?.data?.message ||
+            "Face verification failed. Please try again.",
+        );
+      } finally {
+        setResetLoading(false);
+      }
+    },
+    [resetValues.email],
+  );
 
   return (
     <div className="grid w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-xl md:grid-cols-2">
@@ -446,32 +462,13 @@ export default function LoginForm() {
                   </div>
                 </div>
 
-                <div>
-                  <label
-                    htmlFor="reset-face-file"
-                    className="mb-1 block text-sm font-medium text-slate-700"
-                  >
-                    Upload face image
-                  </label>
-                  <input
-                    id="reset-face-file"
-                    type="file"
-                    accept="image/*"
-                    onChange={(event) =>
-                      setFaceFile(event.target.files?.[0] ?? null)
-                    }
-                    className="block w-full text-sm text-slate-600 file:mr-3 file:rounded file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:font-medium file:text-blue-700"
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleFaceReset}
+                <FaceCamera
+                  captureCount={3}
+                  onCapture={handleFaceReset}
                   disabled={resetLoading}
-                  className="w-full rounded-lg bg-blue-600 py-2.5 font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-                >
-                  {resetLoading ? "Verifying..." : "Verify Face"}
-                </button>
+                  actionLabel="Capture 3 Frames and Verify Face"
+                  busyLabel="Verifying face..."
+                />
               </div>
             ) : (
               <div className="space-y-4">

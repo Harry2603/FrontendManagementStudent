@@ -16,14 +16,16 @@ export const authService = {
     axiosClient.post("/auth/password-reset/otp/request", payload),
   verifyPasswordResetOtp: (payload) =>
     axiosClient.post("/auth/password-reset/otp/verify", payload),
-  verifyPasswordResetFace: (email, file) => {
+  verifyPasswordResetFace: (frames) => {
     const formData = new FormData();
-    formData.append("email", email);
-    if (file) {
-      formData.append("face", file, file.name);
-      formData.append("request", file, file.name);
-    }
-    return axiosClient.post("/auth/password-reset/face/verify", formData);
+    frames.forEach((frame, index) => {
+      const filename = frame.name || `face-reset-${index + 1}.jpg`;
+      formData.append("frames", frame, filename);
+    });
+
+    return axiosClient.post("/auth/password-reset/face/verify", formData, {
+      timeout: 60000,
+    });
   },
   confirmPasswordReset: (payload) =>
     axiosClient.post("/auth/password-reset/confirm", payload),
