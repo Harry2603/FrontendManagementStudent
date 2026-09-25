@@ -5,4 +5,5 @@ export const transcriptService = {
     axiosClient.get("/student/me/course-results", {
       params: { pageNumber, pageSize },
     }),
+  getGpa: () => axiosClient.get("/student/me/gpa"),
 };

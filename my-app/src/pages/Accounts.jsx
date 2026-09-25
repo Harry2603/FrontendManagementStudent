@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import Table from "@/components/ui/Table/Table";
 import RoleTabs from "@/features/users/components/RoleTabs";
 import { buildAccountColumns } from "@/features/users/utils/accountColumns";
@@ -19,8 +19,10 @@ export default function Accounts() {
   const { user } = useAuth();
   const role = user?.role; // "ADMIN" | "TEACHER"
   const [searchParams, setSearchParams] = useSearchParams();
-  const searchQuery = searchParams.get("search") ?? "";
-  const [search, setSearch] = useState(searchQuery);
+  const nameQuery = searchParams.get("Name") ?? "";
+  const emailQuery = searchParams.get("Email") ?? "";
+  const [name, setName] = useState(nameQuery);
+  const [email, setEmail] = useState(emailQuery);
   const [users, setUsers] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -33,14 +35,19 @@ export default function Accounts() {
   const pageNumber = getPageFromParams(searchParams.get("page"));
 
   useEffect(() => {
-    setSearch(searchQuery);
-  }, [searchQuery]);
+    setName(nameQuery);
+    setEmail(emailQuery);
+  }, [nameQuery, emailQuery]);
 
   const updateQueryParams = useCallback(
     (updates) => {
       const nextParams = new URLSearchParams(searchParams);
       Object.entries(updates).forEach(([key, value]) => {
-        nextParams.set(key, String(value));
+        if (value === undefined || value === null || value === "") {
+          nextParams.delete(key);
+        } else {
+          nextParams.set(key, String(value));
+        }
       });
       setSearchParams(nextParams);
     },
@@ -60,7 +67,13 @@ export default function Accounts() {
     setError("");
 
     userService
-      .getAllUsers({ search: searchQuery, role: activeTab, pageNumber, pageSize: PAGE_SIZE })
+      .getAllUsers({
+        name: nameQuery,
+        email: emailQuery,
+        role: activeTab,
+        pageNumber,
+        pageSize: PAGE_SIZE,
+      })
       .then((res) => {
         if (!ignore) {
           setUsers(res.items ?? []);
@@ -77,7 +90,7 @@ export default function Accounts() {
     return () => {
       ignore = true;
     };
-  }, [activeTab, pageNumber, searchQuery]);
+  }, [activeTab, pageNumber, nameQuery, emailQuery]);
 
   const handleTabChange = (nextTab) => {
     updateQueryParams({ role: nextTab, page: 1 });
@@ -85,7 +98,17 @@ export default function Accounts() {
 
   const handleSearchSubmit = (event) => {
     event.preventDefault();
-    updateQueryParams({ search: search.trim(), page: 1 });
+    updateQueryParams({
+      Name: name.trim(),
+      Email: email.trim(),
+      page: 1,
+    });
+  };
+
+  const clearSearch = () => {
+    setName("");
+    setEmail("");
+    updateQueryParams({ Name: "", Email: "", page: 1 });
   };
 
   return (
@@ -101,14 +124,39 @@ export default function Accounts() {
           canSeeTeacherTab={canSeeTeacherTab}
         />
 
-        <form onSubmit={handleSearchSubmit} className="flex flex-wrap items-center gap-3">
-          <input
-            type="text"
-            placeholder="Search by name or email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-600"
-          />
+        <form onSubmit={handleSearchSubmit} className="flex flex-wrap items-center gap-2">
+          <label className="relative">
+            <span className="sr-only">Search by name</span>
+            <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="search"
+              placeholder="Name..."
+              aria-label="Search by name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              className="w-40 rounded border border-gray-300 py-2 pl-9 pr-3 text-sm outline-none focus:border-blue-600"
+            />
+          </label>
+          <label className="relative">
+            <span className="sr-only">Search by email</span>
+            <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="search"
+              placeholder="Email..."
+              aria-label="Search by email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              className="w-40 rounded border border-gray-300 py-2 pl-9 pr-3 text-sm outline-none focus:border-blue-600"
+            />
+          </label>
+          <button type="submit" className="inline-flex items-center gap-1.5 rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700">
+            <Search size={15} /> Search
+          </button>
+          {(name || email) && (
+            <button type="button" onClick={clearSearch} aria-label="Clear search" className="inline-flex items-center gap-1 rounded px-2 py-2 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-700">
+              <X size={15} /> Clear
+            </button>
+          )}
         </form>
       </div>
 
