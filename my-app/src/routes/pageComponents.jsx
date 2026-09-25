@@ -10,9 +10,8 @@ export const NotFound = lazy(() => import("@/pages/NotFound"));
 export const AccountsPage = lazy(() => import("@/pages/Accounts"));
 export const EnrollmentPage = lazy(() => import("@/pages/Enrollment"));
 export const TranscriptPage = lazy(() => import("@/pages/Transcript"));
-export const CourseManagementPage = lazy(
-  () => import("@/pages/CourseManagement"),
-);
+export const CourseListPage = lazy(() => import("@/pages/CourseListPage"));
+export const CourseDetailPage = lazy(() => import("@/pages/CourseDetailPage"));
 export const AnnouncementCenterPage = lazy(
   () => import("@/pages/AnnouncementCenter"),
 );
