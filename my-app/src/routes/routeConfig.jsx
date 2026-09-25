@@ -7,6 +7,7 @@ import {
   User,
  BookPlusIcon,
   GraduationCap,
+  CalendarDays,
 } from "lucide-react";
 import { ROLES } from "@/config/constants";
 import {
@@ -24,6 +25,7 @@ import {
   SettingsPage,
   AnnouncementCenterPage,
   TeacherCourseSectionPage,
+  SchedulerPage,
 } from "./pageComponents";
 
 export const routeConfig = [
@@ -103,6 +105,16 @@ export const routeConfig = [
     menu: {
       label: "Course Sections",
       icon: BookPlus,
+    },
+  },
+  {
+    path: "/schedule",
+    Component: SchedulerPage,
+    access: "private",
+    roles: [ROLES.STUDENT, ROLES.TEACHER],
+    menu: {
+      label: "Schedule",
+      icon: CalendarDays,
     },
   },
   {
