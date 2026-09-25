@@ -1,15 +1,15 @@
-import { memo, Suspense, useState } from "react";
+import { memo, Suspense, useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import {
   ChevronDown,
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
-  UserRound,
 } from "lucide-react";
 import { routeConfig } from "@/routes/routeConfig";
-import { useAuth } from "@/features/auth";
+import { authService, useAuth } from "@/features/auth";
 import PageLoader from "@/components/common/PageLoader";
+import { getAvatarSrc, useDefaultAvatarOnError } from "@/utils/avatar";
 
 const getLinkClass = ({ isActive }) =>
   `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
@@ -69,13 +69,23 @@ const Sidebar = memo(function Sidebar({ role, isOpen, onToggle }) {
 
 function UserMenu({ user, onLogout }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl);
   const displayName = user?.fullName ?? "User";
-  const initials = displayName
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+
+  useEffect(() => {
+    let ignore = false;
+
+    authService
+      .getMe()
+      .then((profile) => {
+        if (!ignore) setAvatarUrl(profile?.avatarUrl);
+      })
+      .catch(() => {});
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   return (
     <div className="relative">
@@ -85,9 +95,12 @@ function UserMenu({ user, onLogout }) {
         aria-expanded={isOpen}
         className="flex items-center gap-3 rounded-lg px-2 py-1.5 text-left hover:bg-slate-100"
       >
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700">
-          {initials || <UserRound size={17} />}
-        </span>
+        <img
+          src={getAvatarSrc(avatarUrl)}
+          alt=""
+          onError={useDefaultAvatarOnError}
+          className="h-9 w-9 rounded-full object-cover"
+        />
         <span className="hidden min-w-0 sm:block">
           <span className="block max-w-40 truncate text-sm font-semibold text-slate-800">
             {displayName}
