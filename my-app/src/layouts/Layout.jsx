@@ -24,12 +24,13 @@ const Sidebar = memo(function Sidebar({ role, isOpen, onToggle }) {
   const menuItems = routeConfig.filter(
     (r) => r.menu && (!r.roles || r.roles.includes(role)),
   );
+  const desktopWidthClass = isOpen ? "lg:w-64" : "lg:w-20";
 
   return (
     <aside
-      className={`flex shrink-0 flex-col border-r border-slate-200 bg-white transition-[width] duration-200 ${
-        isOpen ? "w-64" : "w-20"
-      }`}
+      className={`fixed inset-y-0 left-0 z-40 flex shrink-0 flex-col border-r border-slate-200 bg-white shadow-lg transition-all duration-200 ${
+        isOpen ? "translate-x-0" : "-translate-x-full"
+      } w-64 lg:static lg:translate-x-0 lg:shadow-none ${desktopWidthClass}`}
     >
       <div
         className={`flex h-16 items-center ${
@@ -77,8 +78,12 @@ const Sidebar = memo(function Sidebar({ role, isOpen, onToggle }) {
 
 function UserMenu({ user, onLogout }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl);
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl ?? null);
   const displayName = user?.fullName ?? "User";
+
+  useEffect(() => {
+    setAvatarUrl(user?.avatarUrl ?? null);
+  }, [user?.avatarUrl]);
 
   useEffect(() => {
     let ignore = false;
@@ -86,7 +91,7 @@ function UserMenu({ user, onLogout }) {
     authService
       .getMe()
       .then((profile) => {
-        if (!ignore) setAvatarUrl(profile?.avatarUrl);
+        if (!ignore) setAvatarUrl(profile?.avatarUrl ?? null);
       })
       .catch(() => {});
 
@@ -136,10 +141,36 @@ function UserMenu({ user, onLogout }) {
 
 export default function Layout() {
   const { user, logout } = useAuth();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth >= 1024 : true,
+  );
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+
+    const handleChange = (event) => {
+      setIsSidebarOpen(event.matches);
+    };
+
+    handleChange(mediaQuery);
+    mediaQuery.addEventListener("change", handleChange);
+
+    return () => {
+      mediaQuery.removeEventListener("change", handleChange);
+    };
+  }, []);
 
   return (
     <div className="flex h-screen bg-slate-50">
+      {isSidebarOpen && (
+        <button
+          type="button"
+          aria-label="Close sidebar"
+          className="fixed inset-0 z-30 bg-slate-900/30 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       <Sidebar
         role={user.role}
         isOpen={isSidebarOpen}
@@ -147,15 +178,29 @@ export default function Layout() {
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-0">
-          <img
-            src={defaultAvatar}
-            alt="Logo"
-            className="h-12 w-12 object-contain"
-          />
+        <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-3 sm:px-4">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              aria-label={isSidebarOpen ? "Collapse sidebar" : "Open sidebar"}
+              onClick={() => setIsSidebarOpen((open) => !open)}
+              className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 lg:hidden"
+            >
+              {isSidebarOpen ? (
+                <PanelLeftClose size={20} />
+              ) : (
+                <PanelLeftOpen size={20} />
+              )}
+            </button>
+            <img
+              src={defaultAvatar}
+              alt="Logo"
+              className="h-10 w-10 object-contain sm:h-12 sm:w-12"
+            />
+          </div>
           <UserMenu user={user} onLogout={logout} />
         </header>
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6">
           <Suspense fallback={<PageLoader />}>
             <Outlet />
           </Suspense>

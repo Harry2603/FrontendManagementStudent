@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import Table from "@/components/ui/Table/Table";
 import RoleTabs from "@/features/users/components/RoleTabs";
 import { buildAccountColumns } from "@/features/users/utils/accountColumns";
@@ -60,7 +60,12 @@ export default function Accounts() {
     setError("");
 
     userService
-      .getAllUsers({ search: searchQuery, role: activeTab, pageNumber, pageSize: PAGE_SIZE })
+      .getAllUsers({
+        search: searchQuery,
+        role: activeTab,
+        pageNumber,
+        pageSize: PAGE_SIZE,
+      })
       .then((res) => {
         if (!ignore) {
           setUsers(res.items ?? []);
@@ -94,20 +99,26 @@ export default function Accounts() {
         Account Management
       </h1>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <RoleTabs
           value={activeTab}
           onChange={handleTabChange}
           canSeeTeacherTab={canSeeTeacherTab}
         />
 
-        <form onSubmit={handleSearchSubmit} className="flex flex-wrap items-center gap-3">
+        <form
+          onSubmit={handleSearchSubmit}
+          className="relative w-full max-w-md"
+        >
+          <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+            <Search size={16} />
+          </span>
           <input
             type="text"
             placeholder="Search by name or email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-600"
+            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 shadow-sm transition-all duration-200 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-100"
           />
         </form>
       </div>
@@ -117,11 +128,7 @@ export default function Accounts() {
       {loading ? (
         <p className="text-sm text-gray-500">Loading...</p>
       ) : (
-        <Table
-          columns={COLUMNS}
-          data={users}
-          rowKey={(row) => row.id}
-        />
+        <Table columns={COLUMNS} data={users} rowKey={(row) => row.id} />
       )}
 
       {totalPages > 1 && (
@@ -134,7 +141,9 @@ export default function Accounts() {
           >
             <ChevronLeft size={16} /> Previous
           </button>
-          <span className="text-slate-500">Page {pageNumber} of {totalPages}</span>
+          <span className="text-slate-500">
+            Page {pageNumber} of {totalPages}
+          </span>
           <button
             type="button"
             onClick={() => updateQueryParams({ page: pageNumber + 1 })}

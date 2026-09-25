@@ -12,6 +12,21 @@ export const authService = {
   },
   adminLogin: (payload) => axiosClient.post("/auth/admin/login", payload),
   register: (payload) => axiosClient.post("/auth/register", payload),
+  requestPasswordResetOtp: (payload) =>
+    axiosClient.post("/auth/password-reset/otp/request", payload),
+  verifyPasswordResetOtp: (payload) =>
+    axiosClient.post("/auth/password-reset/otp/verify", payload),
+  verifyPasswordResetFace: (email, file) => {
+    const formData = new FormData();
+    formData.append("email", email);
+    if (file) {
+      formData.append("face", file, file.name);
+      formData.append("request", file, file.name);
+    }
+    return axiosClient.post("/auth/password-reset/face/verify", formData);
+  },
+  confirmPasswordReset: (payload) =>
+    axiosClient.post("/auth/password-reset/confirm", payload),
   getMe: () => axiosClient.get("/users/me"),
   updateProfile: (payload) => axiosClient.put("/users/profile", payload),
   uploadAvatar: (file) => {

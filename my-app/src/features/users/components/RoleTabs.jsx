@@ -5,29 +5,42 @@ const TABS = [
   { value: "TEACHER", label: "Teachers" },
 ];
 
-// memo: RoleTabs chỉ phụ thuộc value/onChange/canSeeTeacherTab, tránh re-render
-// khi Accounts.jsx re-render do search hoặc data thay đổi.
 function RoleTabs({ value, onChange, canSeeTeacherTab }) {
   const tabs = canSeeTeacherTab
     ? TABS
     : TABS.filter((t) => t.value === "STUDENT");
+  const activeIndex = tabs.findIndex((tab) => tab.value === value);
 
   return (
-    <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1">
-      {tabs.map((tab) => (
-        <button
-          key={tab.value}
-          type="button"
-          onClick={() => onChange(tab.value)}
-          className={`cursor-pointer rounded-md px-4 py-1.5 text-sm font-medium transition-colors hover:bg-white hover:text-blue-600 ${
-            value === tab.value
-              ? "bg-white text-blue-600 shadow-sm"
-              : "text-gray-500 hover:text-gray-700"
-          }`}
-        >
-          {tab.label}
-        </button>
-      ))}
+    <div
+      className="relative inline-flex rounded-xl border border-slate-200 bg-slate-100 shadow-inner shadow-slate-200/60"
+      style={{ gap: "0.25rem", padding: "0.25rem" }}
+    >
+      <div
+        className="absolute inset-y-0 left-0 rounded-lg bg-white shadow-sm transition-transform duration-300 ease-out"
+        style={{
+          width: `calc((100% - ${(tabs.length - 1) * 0.25}rem) / ${tabs.length})`,
+          transform: `translateX(calc(${activeIndex} * (100% + 0.25rem)))`,
+        }}
+      />
+
+      {tabs.map((tab) => {
+        const isActive = value === tab.value;
+
+        return (
+          <button
+            key={tab.value}
+            type="button"
+            onClick={() => onChange(tab.value)}
+            className={`relative z-10 cursor-pointer rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 ${
+              isActive ? "text-blue-600" : "text-slate-500 hover:text-slate-700"
+            }`}
+            style={{ minWidth: "7.25rem" }}
+          >
+            {tab.label}
+          </button>
+        );
+      })}
     </div>
   );
 }

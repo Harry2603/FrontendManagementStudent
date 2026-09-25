@@ -15,5 +15,19 @@ export const getRegisterError = (error) => {
   if (error.response.status === 409) {
     return { email: "This email is already in use." };
   }
+  if (error.response.status === 400) {
+    const data = error.response.data;
+    const message =
+      data?.message || data?.title || data?.error || data?.detail;
+
+    return {
+      form: message || "The registration information is invalid.",
+    };
+  }
+  if (error.response.status === 404) {
+    return {
+      form: "Registration endpoint was not found. Please check the API URL.",
+    };
+  }
   return { form: "Registration failed. Please try again." };
 };
