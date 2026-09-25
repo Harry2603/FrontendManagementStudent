@@ -262,11 +262,11 @@ export default function TeacherCourseSection() {
         value !== undefined &&
         value !== null &&
         (Number.isNaN(Number(value)) ||
-          Number(value) < 1 ||
-          Number(value) > 100),
+          Number(value) < 0 ||
+          Number(value) > 10),
     );
     if (hasInvalidScore) {
-      setScoreError("Scores must be between 1 and 100.");
+      setScoreError("Scores must be between 0 and 10.");
       return;
     }
 
