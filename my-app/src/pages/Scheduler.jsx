@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { addDays, addWeeks, format, startOfWeek } from "date-fns";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { addDays, addWeeks, format, isSameDay, startOfWeek } from "date-fns";
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { ROLES } from "@/config/constants";
 import { useAuth } from "@/features/auth";
@@ -59,15 +59,15 @@ function SectionCard({ section }) {
   const [, endTime] = PERIOD_TIMES[section.endPeriod] ?? ["--:--", "--:--"];
 
   return (
-    <div className="rounded-lg border border-red-100 bg-red-50 p-3 text-red-900">
+    <div className="rounded-lg border border-purple-100 bg-purple-50 p-3 text-purple-900">
       <div className="font-bold">{section.course?.courseCode ?? "Course"}</div>
       <div className="mt-1 text-xs font-medium">
         {section.course?.courseName ?? "Unnamed course"}
       </div>
-      <div className="mt-2 text-xs text-red-700">
+      <div className="mt-2 text-xs text-purple-700">
         {section.sectionCode || "No section code"} · {section.status || "N/A"}
       </div>
-      <div className="mt-1 text-xs font-medium text-red-700">
+      <div className="mt-1 text-xs font-medium text-purple-700">
         Period {section.startPeriod}-{section.endPeriod} · {startTime}-{endTime}
       </div>
     </div>
@@ -81,6 +81,14 @@ export default function Scheduler() {
   const [sections, setSections] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const scheduleGridRef = useRef(null);
+  const currentTimeLineRef = useRef(null);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setCurrentTime(new Date()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     let ignore = false;
@@ -133,6 +141,53 @@ export default function Scheduler() {
   const weekEnd = getEndOfWeek(selectedDate);
   const sectionsThisWeek = scheduleByDay.flatMap((day) => day.sections);
 
+  useEffect(() => {
+    const grid = scheduleGridRef.current;
+    const line = currentTimeLineRef.current;
+    if (!grid || !line) return undefined;
+
+    const updateTimeLine = () => {
+      const nowInScheduleWeek = scheduleByDay.some((day) =>
+        isSameDay(day.date, currentTime),
+      );
+      const now = format(currentTime, "HH:mm");
+      const activePeriod = Object.entries(PERIOD_TIMES).find(
+        ([, [start, end]]) => now >= start && now <= end,
+      );
+
+      if (!nowInScheduleWeek || !activePeriod) {
+        line.style.display = "none";
+        return;
+      }
+
+      const [period, [start, end]] = activePeriod;
+      const periodRow = grid.querySelector(`[data-period="${period}"]`);
+      if (!periodRow) return;
+
+      const periodColumn = periodRow.querySelector("th");
+      if (!periodColumn) return;
+
+      const [startHour, startMinute] = start.split(":").map(Number);
+      const [endHour, endMinute] = end.split(":").map(Number);
+      const startMinutes = startHour * 60 + startMinute;
+      const endMinutes = endHour * 60 + endMinute;
+      const nowMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
+      const gridBounds = grid.getBoundingClientRect();
+      const rowBounds = periodRow.getBoundingClientRect();
+      const periodColumnBounds = periodColumn.getBoundingClientRect();
+      const progress = (nowMinutes - startMinutes) / (endMinutes - startMinutes);
+
+      line.style.display = "block";
+      line.style.left = `${periodColumnBounds.right - gridBounds.left}px`;
+      line.style.top = `${rowBounds.top - gridBounds.top + rowBounds.height * progress}px`;
+    };
+
+    updateTimeLine();
+    const observer = new ResizeObserver(updateTimeLine);
+    observer.observe(grid);
+    return () => observer.disconnect();
+  }, [currentTime, scheduleByDay]);
+
   return (
     <section className="mx-auto max-w-7xl space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -141,9 +196,7 @@ export default function Scheduler() {
             Academic planner
           </p>
           <h1 className="mt-1 text-3xl font-bold text-slate-900">Schedule</h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Your timetable for the current semester.
-          </p>
+
         </div>
         <div className="flex items-center justify-end gap-2">
           <button
@@ -214,24 +267,33 @@ export default function Scheduler() {
           </div>
         ) : (
           <>
-            <div className="hidden overflow-x-auto md:block">
-            <table className="w-full min-w-[900px] table-fixed border-separate border-spacing-0 text-sm">
+            <div ref={scheduleGridRef} className="relative hidden overflow-x-auto md:block">
+            <div
+              ref={currentTimeLineRef}
+              className="pointer-events-none absolute right-0 z-10 hidden border-t-2 border-purple-500"
+              aria-hidden="true"
+            >
+              <span className="absolute right-0 -top-5 -translate-y-1/2 rounded-full bg-purple-600 px-2 py-1 text-xs font-semibold text-white shadow-sm after:absolute after:left-1/2 after:top-full after:size-2 after:-translate-x-1/2 after:-translate-y-1/2 after:rotate-45 after:bg-purple-600">
+                {format(currentTime, "HH:mm")}
+              </span>
+            </div>
+             <table className="w-full min-w-[900px] table-fixed border-separate border-spacing-0 text-sm">
             <thead>
               <tr>
                 <th className="w-32 border-b border-r border-white bg-slate-200 p-3 text-left font-semibold text-slate-700">
                   Period
                 </th>
                 {scheduleByDay.map((day) => (
-                  <th key={day.key} className="border-b border-r border-white bg-slate-100 p-3 text-center font-semibold text-slate-700 last:border-r-0">
-                    <div>{day.label}</div>
-                    <div className="mt-1 text-xs font-normal text-slate-500">{format(day.date, "dd/MM")}</div>
-                  </th>
+                   <th key={day.key} className="border-b border-r border-white bg-slate-100 p-3 text-center font-semibold text-slate-700 last:border-r-0">
+                     <div>{day.label}</div>
+                     <div className="mt-1 text-xs font-normal text-slate-500">{format(day.date, "dd/MM")}</div>
+                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {Object.entries(PERIOD_TIMES).map(([period, [start, end]]) => (
-                <tr key={period}>
+                <tr key={period} data-period={period}>
                   <th className="border-b border-r border-white bg-slate-200 p-3 text-left align-top font-medium text-slate-600">
                     <div>Period {period}</div>
                     <div className="mt-1 text-xs font-normal">{start} - {end}</div>
@@ -268,10 +330,10 @@ export default function Scheduler() {
             <div className="space-y-3 md:hidden">
             {scheduleByDay.map((day) => (
               <section key={day.key} className="rounded-lg border border-slate-200">
-                <div className="flex items-center justify-between bg-slate-100 px-3 py-2">
-                  <h2 className="font-semibold text-slate-800">{day.label}</h2>
-                  <span className="text-xs text-slate-500">{format(day.date, "dd/MM/yyyy")}</span>
-                </div>
+                 <div className="flex items-center justify-between bg-slate-100 px-3 py-2">
+                   <h2 className="font-semibold text-slate-800">{day.label}</h2>
+                   <span className="text-xs text-slate-500">{format(day.date, "dd/MM/yyyy")}</span>
+                 </div>
                 <div className="space-y-2 p-2">
                   {day.sections.length > 0 ? (
                     day.sections.map((section) => (
