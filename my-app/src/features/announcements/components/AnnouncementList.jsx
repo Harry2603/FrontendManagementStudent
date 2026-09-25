@@ -1,4 +1,5 @@
 import CreatorBadge from "./CreatorBadge";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 function formatDate(iso) {
   return new Date(iso).toLocaleString("en-US", {
@@ -78,23 +79,25 @@ export default function AnnouncementList({
       )}
 
       {totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-between text-sm">
+        <div className="mt-4 flex items-center justify-center gap-3 border-t border-slate-200 pt-3 text-sm">
           <button
+            type="button"
             onClick={onPrevPage}
             disabled={pageNumber <= 1 || isLoading}
-            className="rounded border border-gray-300 px-3 py-1 disabled:opacity-40"
+            className="inline-flex cursor-pointer items-center gap-1 text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:text-slate-400"
           >
-            Previous
+            <ChevronLeft size={16} /> Previous
           </button>
           <span className="text-gray-500">
             Page {pageNumber}/{totalPages}
           </span>
           <button
+            type="button"
             onClick={onNextPage}
             disabled={pageNumber >= totalPages || isLoading}
-            className="rounded border border-gray-300 px-3 py-1 disabled:opacity-40"
+            className="inline-flex cursor-pointer items-center gap-1 text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:text-slate-400"
           >
-            Next
+            Next <ChevronRight size={16} />
           </button>
         </div>
       )}

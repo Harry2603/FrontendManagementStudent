@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import Table from "@/components/ui/Table/Table";
 import RoleTabs from "@/features/users/components/RoleTabs";
 import { buildAccountColumns } from "@/features/users/utils/accountColumns";
@@ -124,25 +125,23 @@ export default function Accounts() {
       )}
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center justify-center gap-3 border-t border-slate-200 pt-3 text-sm">
           <button
             type="button"
             onClick={() => updateQueryParams({ page: pageNumber - 1 })}
             disabled={pageNumber <= 1 || loading}
-            className="cursor-pointer rounded border border-gray-300 px-3 py-1 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex cursor-pointer items-center gap-1 text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:text-slate-400"
           >
-            Trước
+            <ChevronLeft size={16} /> Previous
           </button>
-          <span className="text-gray-500">
-            Trang {pageNumber}/{totalPages}
-          </span>
+          <span className="text-slate-500">Page {pageNumber} of {totalPages}</span>
           <button
             type="button"
             onClick={() => updateQueryParams({ page: pageNumber + 1 })}
             disabled={pageNumber >= totalPages || loading}
-            className="cursor-pointer rounded border border-gray-300 px-3 py-1 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex cursor-pointer items-center gap-1 text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:text-slate-400"
           >
-            Sau
+            Next <ChevronRight size={16} />
           </button>
         </div>
       )}
