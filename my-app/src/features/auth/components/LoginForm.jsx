@@ -65,7 +65,7 @@ export default function LoginForm() {
         className="order-2 space-y-4 p-6 sm:p-8 md:order-1"
       >
         <h1 className="text-2xl font-semibold text-gray-900">
-          {isAdmin ? "Đăng nhập quản trị" : "Đăng nhập"}
+          {isAdmin ? "Admin Sign In" : "Sign In"}
         </h1>
 
         {errors.form && (
@@ -104,7 +104,7 @@ export default function LoginForm() {
             htmlFor="password"
             className="mb-1 block text-sm font-medium text-gray-700"
           >
-            Mật khẩu
+            Password
           </label>
           <div className="relative">
             <input
@@ -120,8 +120,8 @@ export default function LoginForm() {
             <button
               type="button"
               onClick={() => setShowPassword((visible) => !visible)}
-              aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-              title={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              title={showPassword ? "Hide password" : "Show password"}
               className="absolute inset-y-0 right-0 flex w-10 item-center justify-center top-2.5 text-gray-500 hover:text-gray-700"
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -137,7 +137,16 @@ export default function LoginForm() {
           disabled={loading}
           className="w-full rounded bg-blue-600 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-60"
         >
-          {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+          {loading ? "Signing in..." : "Sign In"}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => navigate("/login?method=face")}
+          className="w-full rounded border border-blue-200 py-2 font-medium text-blue-700 hover:bg-blue-50"
+          hidden={isAdmin}
+        >
+          Sign in with Face ID
         </button>
         <button
           type="button"
@@ -150,15 +159,15 @@ export default function LoginForm() {
         {!isAdmin && (
           <>
             <p className="text-center text-sm text-gray-600">
-              Chưa có tài khoản?{" "}
+              Don't have an account?{" "}
               <Link to="/register" className="text-blue-600 hover:underline">
-                Đăng ký
+                Sign up
               </Link>
             </p>
             <p className="text-center text-sm text-gray-600">
-              Quản trị viên?{" "}
+              Administrator?{" "}
               <Link to="/admin/login" className="text-blue-600 hover:underline">
-                Đăng nhập quản trị
+                Admin sign in
               </Link>
             </p>
           </>
@@ -166,20 +175,20 @@ export default function LoginForm() {
 
         {isAdmin && (
           <p className="text-center text-sm text-gray-600">
-            Người dùng thông thường?{" "}
+            Regular user?{" "}
             <Link to="/login" className="text-blue-600 hover:underline">
-              Đăng nhập
+              Sign in
             </Link>
           </p>
         )}
       </form>
       <div
         className="order-1 min-h-56 overflow-hidden border-b border-slate-200 bg-slate-50 md:order-2 md:min-h-full md:border-b-0 md:border-l"
-        aria-label="Khung ảnh động đăng nhập"
+        aria-label="Animated sign-in illustration"
       >
         <img
           src={animatedArtwork}
-          alt="Ảnh minh họa đăng nhập"
+          alt="Sign-in illustration"
           className="block h-full min-h-56 w-full object-cover"
         />
       </div>

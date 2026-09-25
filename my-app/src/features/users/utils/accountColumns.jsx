@@ -1,9 +1,9 @@
-const GENDER_LABEL = { MALE: "Nam", FEMALE: "Nữ", OTHER: "Khác" };
+const GENDER_LABEL = { MALE: "Male", FEMALE: "Female", OTHER: "Other" };
 
 function formatDate(value) {
   if (!value) return "-";
   const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString("vi-VN");
+  return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString("en-US");
 }
 
 // Tách thành factory function thay vì const array ở module scope, để nếu sau
@@ -25,21 +25,21 @@ export function buildAccountColumns() {
           <div className="h-8 w-8 rounded-full bg-gray-200" />
         ),
     },
-    { key: "fullName", header: "Họ và tên", sortable: true },
+    { key: "fullName", header: "Full Name", sortable: true },
     { key: "email", header: "Email", sortable: true },
     {
       key: "dateOfBirth",
-      header: "Ngày sinh",
+      header: "Date of Birth",
       sortable: true,
       sortFn: (a, b) => new Date(a.dateOfBirth) - new Date(b.dateOfBirth),
       render: (row) => formatDate(row.dateOfBirth),
     },
     {
       key: "gender",
-      header: "Giới tính",
+      header: "Gender",
       render: (row) => GENDER_LABEL[row.gender] ?? row.gender,
     },
-    { key: "phone", header: "SĐT" },
-    { key: "address", header: "Địa chỉ" },
+    { key: "phone", header: "Phone" },
+    { key: "address", header: "Address" },
   ];
 }
