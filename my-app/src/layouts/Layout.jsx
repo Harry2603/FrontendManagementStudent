@@ -10,11 +10,12 @@ import { routeConfig } from "@/routes/routeConfig";
 import { authService, useAuth } from "@/features/auth";
 import PageLoader from "@/components/common/PageLoader";
 import { getAvatarSrc, useDefaultAvatarOnError } from "@/utils/avatar";
+import defaultAvatar from "@/assets/defaultAvatar.png";
 
 const getLinkClass = ({ isActive }) =>
   `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
     isActive
-      ? "bg-red-50 text-red-700"
+      ? "bg-blue-50 text-blue-700"
       : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
   }`;
 
@@ -32,13 +33,13 @@ const Sidebar = memo(function Sidebar({ role, isOpen, onToggle }) {
     >
       <div
         className={`flex h-16 items-center ${
-          isOpen ? "justify-between px-4" : "justify-center"
+          isOpen ? "justify-between px-3" : "justify-center"
         }`}
       >
         {isOpen && (
           <div
             aria-label="MsSystem"
-            className="flex h-10 w-44 items-center justify-center text-lg font-bold text-red-600"
+            className="flex h-10 w-44 items-center justify-start text-lg font-bold text-blue-600"
           >
             MsSystem
           </div>
@@ -146,8 +147,12 @@ export default function Layout() {
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 shrink-0 items-center justify-end border-b border-slate-200 bg-white px-6">
-          {/* <img src={logo} alt="Logo" className="h-9 w-auto" /> */}
+        <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-0">
+          <img
+            src={defaultAvatar}
+            alt="Logo"
+            className="h-12 w-12 object-contain"
+          />
           <UserMenu user={user} onLogout={logout} />
         </header>
         <main className="flex-1 overflow-y-auto p-6">
