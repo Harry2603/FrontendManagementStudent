@@ -18,3 +18,4 @@ export const AnnouncementCenterPage = lazy(
 export const TeacherCourseSectionPage = lazy(
   () => import("@/pages/TeacherCourseSection"),
 );
+export const SchedulerPage = lazy(() => import("@/pages/Scheduler"));
