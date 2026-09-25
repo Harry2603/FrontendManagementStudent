@@ -103,35 +103,42 @@ export default function AnnouncementCenter() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="announcement-detail-title"
-            className="max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-xl"
+            className="max-h-[40vh] w-[600px] max-w-[calc(100vw-2rem)] overflow-y-auto rounded-2xl bg-white p-6 shadow-xl"
           >
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-500">
+                  {selectedAnnouncement.user?.fullName ?? "Anonymous"}
+                  {selectedAnnouncement.user?.role && (
+                    <span className="text-gray-400">
+                      {" "}
+                      · {selectedAnnouncement.user.role}
+                    </span>
+                  )}
+                </p>
                 <h2
                   id="announcement-detail-title"
-                  className="break-words text-xl font-semibold text-gray-900"
+                  className="mt-1 break-words text-xl font-bold text-gray-900"
                 >
                   {selectedAnnouncement.title}
                 </h2>
-                <p className="mt-1 text-sm text-gray-500">
-                  {selectedAnnouncement.user?.fullName ?? "Anonymous"} ·{" "}
-                  {selectedAnnouncement.user?.role}
-                </p>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedAnnouncement(null)}
                 aria-label="Close announcement details"
-                className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                className="shrink-0 rounded-full p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
               >
                 <X size={20} />
               </button>
             </div>
+
+            <p className="mt-3 text-sm font-semibold text-blue-600">
+              {new Date(selectedAnnouncement.createdAt).toLocaleString("en-GB")}
+            </p>
+
             <p className="mt-5 break-words whitespace-pre-wrap text-sm leading-6 text-gray-700">
               {selectedAnnouncement.content}
-            </p>
-            <p className="mt-5 text-xs text-gray-400">
-              {new Date(selectedAnnouncement.createdAt).toLocaleString("en-GB")}
             </p>
           </section>
         </div>
