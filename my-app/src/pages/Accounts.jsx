@@ -68,7 +68,6 @@ export default function Accounts() {
 
     userService
       .getAllUsers({
-        search: searchQuery,
         name: nameQuery,
         email: emailQuery,
         role: activeTab,
@@ -127,22 +126,14 @@ export default function Accounts() {
 
         <form
           onSubmit={handleSearchSubmit}
-          className="relative w-full max-w-md"
+          className="flex flex-wrap items-center gap-2"
         >
-          <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-            <Search size={16} />
-          </span>
-          <input
-            type="text"
-            placeholder="Search by name or email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 shadow-sm transition-all duration-200 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-100"
-          />
-        <form onSubmit={handleSearchSubmit} className="flex flex-wrap items-center gap-2">
           <label className="relative">
             <span className="sr-only">Search by name</span>
-            <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search
+              size={16}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
             <input
               type="search"
               placeholder="Name..."
@@ -154,7 +145,10 @@ export default function Accounts() {
           </label>
           <label className="relative">
             <span className="sr-only">Search by email</span>
-            <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search
+              size={16}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
             <input
               type="search"
               placeholder="Email..."
@@ -164,11 +158,19 @@ export default function Accounts() {
               className="w-40 rounded border border-gray-300 py-2 pl-9 pr-3 text-sm outline-none focus:border-blue-600"
             />
           </label>
-          <button type="submit" className="inline-flex items-center gap-1.5 rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700">
+          <button
+            type="submit"
+            className="inline-flex items-center gap-1.5 rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
             <Search size={15} /> Search
           </button>
           {(name || email) && (
-            <button type="button" onClick={clearSearch} aria-label="Clear search" className="inline-flex items-center gap-1 rounded px-2 py-2 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-700">
+            <button
+              type="button"
+              onClick={clearSearch}
+              aria-label="Clear search"
+              className="inline-flex items-center gap-1 rounded px-2 py-2 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+            >
               <X size={15} /> Clear
             </button>
           )}
