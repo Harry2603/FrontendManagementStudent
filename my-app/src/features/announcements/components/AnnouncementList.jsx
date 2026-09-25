@@ -1,7 +1,7 @@
 import CreatorBadge from "./CreatorBadge";
 
 function formatDate(iso) {
-  return new Date(iso).toLocaleString("vi-VN", {
+  return new Date(iso).toLocaleString("en-US", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -23,19 +23,19 @@ export default function AnnouncementList({
   if (error) {
     return (
       <p className="text-sm text-red-600">
-        Không tải được thông báo. Vui lòng thử lại.
+        Unable to load announcements. Please try again.
       </p>
     );
   }
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4">
-      <h2 className="mb-3 text-lg font-semibold text-gray-900">Thông báo</h2>
+      <h2 className="mb-3 text-lg font-semibold text-gray-900">Announcements</h2>
 
       {isLoading ? (
-        <p className="text-sm text-gray-400">Đang tải...</p>
+        <p className="text-sm text-gray-400">Loading...</p>
       ) : items.length === 0 ? (
-        <p className="text-sm text-gray-400">Chưa có thông báo nào.</p>
+        <p className="text-sm text-gray-400">No announcements yet.</p>
       ) : (
         <ul className="space-y-3">
           {items.map((item) => (
@@ -54,7 +54,7 @@ export default function AnnouncementList({
                 </div>
                 <p className="mt-1 text-sm text-gray-600">{item.content}</p>
                 <div className="mt-1 flex items-center gap-2 text-xs text-gray-400">
-                  <span>{item.user?.fullName ?? "Ẩn danh"}</span>
+                  <span>{item.user?.fullName ?? "Anonymous"}</span>
                   <span>•</span>
                   <span>{formatDate(item.createdAt)}</span>
                 </div>
@@ -71,17 +71,17 @@ export default function AnnouncementList({
             disabled={pageNumber <= 1 || isLoading}
             className="rounded border border-gray-300 px-3 py-1 disabled:opacity-40"
           >
-            Trước
+            Previous
           </button>
           <span className="text-gray-500">
-            Trang {pageNumber}/{totalPages}
+            Page {pageNumber}/{totalPages}
           </span>
           <button
             onClick={onNextPage}
             disabled={pageNumber >= totalPages || isLoading}
             className="rounded border border-gray-300 px-3 py-1 disabled:opacity-40"
           >
-            Sau
+            Next
           </button>
         </div>
       )}

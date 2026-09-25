@@ -67,7 +67,7 @@ export default function Table({
   selectable = false,
   onSelectionChange,
   onRowClick,
-  emptyMessage = "Không có dữ liệu",
+  emptyMessage = "No data available",
 }) {
   const {
     sortedData,

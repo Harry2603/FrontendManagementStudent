@@ -26,9 +26,9 @@ const INITIAL_VALUES = {
 };
 
 const GENDER_OPTIONS = [
-  { value: "MALE", label: "Nam" },
-  { value: "FEMALE", label: "Nữ" },
-  { value: "OTHER", label: "Khác" },
+  { value: "MALE", label: "Male" },
+  { value: "FEMALE", label: "Female" },
+  { value: "OTHER", label: "Other" },
 ];
 
 const INPUT_CLASS =
@@ -65,7 +65,7 @@ const Field = memo(function Field({
           aria-invalid={!!error}
           className={INPUT_CLASS}
         >
-          <option value="">-- Chọn --</option>
+          <option value="">-- Select --</option>
           {options.map((o) => (
             <option key={o.value} value={o.value}>
               {o.label}
@@ -89,8 +89,8 @@ const Field = memo(function Field({
             <button
               type="button"
               onClick={() => setShowPassword((visible) => !visible)}
-              aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-              title={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              title={showPassword ? "Hide password" : "Show password"}
               className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-gray-500 hover:text-gray-700"
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -130,11 +130,11 @@ export default function RegisterForm() {
           values.password,
           values.confirmPassword,
         ),
-        fullName: validateRequired(values.fullName, "họ tên"),
+        fullName: validateRequired(values.fullName, "your full name"),
         dateOfBirth: validateDateOfBirth(values.dateOfBirth),
         gender: validateGender(values.gender),
         phone: validatePhone(values.phone),
-        address: validateRequired(values.address, "địa chỉ"),
+        address: validateRequired(values.address, "your address"),
       };
       if (Object.values(clientErrors).some(Boolean)) {
         setErrors(clientErrors);
@@ -171,7 +171,7 @@ export default function RegisterForm() {
       className="w-full max-w-md space-y-4 rounded-xl bg-white p-8 shadow"
     >
       <h1 className="text-2xl font-semibold text-gray-900">
-        Đăng ký sinh viên
+        Student Registration
       </h1>
 
       {errors.form && (
@@ -182,7 +182,7 @@ export default function RegisterForm() {
 
       <Field
         name="fullName"
-        label="Họ và tên"
+        label="Full Name"
         autoComplete="name"
         value={values.fullName}
         error={errors.fullName}
@@ -202,7 +202,7 @@ export default function RegisterForm() {
       <div className="grid grid-cols-2 gap-4">
         <Field
           name="dateOfBirth"
-          label="Ngày sinh"
+          label="Date of Birth"
           type="date"
           max={new Date().toLocaleDateString("en-CA")}
           value={values.dateOfBirth}
@@ -211,7 +211,7 @@ export default function RegisterForm() {
         />
         <Field
           name="gender"
-          label="Giới tính"
+          label="Gender"
           options={GENDER_OPTIONS}
           value={values.gender}
           error={errors.gender}
@@ -221,7 +221,7 @@ export default function RegisterForm() {
 
       <Field
         name="phone"
-        label="Số điện thoại"
+        label="Phone Number"
         type="tel"
         autoComplete="tel"
         value={values.phone}
@@ -231,7 +231,7 @@ export default function RegisterForm() {
 
       <Field
         name="address"
-        label="Địa chỉ"
+        label="Address"
         autoComplete="street-address"
         value={values.address}
         error={errors.address}
@@ -240,7 +240,7 @@ export default function RegisterForm() {
 
       <Field
         name="password"
-        label="Mật khẩu"
+        label="Password"
         type="password"
         autoComplete="new-password"
         value={values.password}
@@ -250,7 +250,7 @@ export default function RegisterForm() {
 
       <Field
         name="confirmPassword"
-        label="Nhập lại mật khẩu"
+        label="Confirm Password"
         type="password"
         autoComplete="new-password"
         value={values.confirmPassword}
@@ -263,13 +263,13 @@ export default function RegisterForm() {
         disabled={loading}
         className="w-full rounded bg-blue-600 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-60"
       >
-        {loading ? "Đang đăng ký..." : "Đăng ký"}
+        {loading ? "Registering..." : "Register"}
       </button>
 
       <p className="text-center text-sm text-gray-600">
-        Đã có tài khoản?{" "}
+        Already have an account?{" "}
         <Link to="/login" className="text-blue-600 hover:underline">
-          Đăng nhập
+          Sign in
         </Link>
       </p>
     </form>

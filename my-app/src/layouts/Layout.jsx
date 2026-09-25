@@ -39,8 +39,8 @@ const Sidebar = memo(function Sidebar({ role, isOpen, onToggle }) {
         <button
           type="button"
           onClick={onToggle}
-          aria-label={isOpen ? "Thu gọn sidebar" : "Mở rộng sidebar"}
-          title={isOpen ? "Thu gọn sidebar" : "Mở rộng sidebar"}
+          aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
+          title={isOpen ? "Collapse sidebar" : "Expand sidebar"}
           className="rounded-lg p-2 text-slate-300 hover:bg-slate-800 hover:text-white"
         >
           {isOpen ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
@@ -69,7 +69,7 @@ const Sidebar = memo(function Sidebar({ role, isOpen, onToggle }) {
 
 function UserMenu({ user, onLogout }) {
   const [isOpen, setIsOpen] = useState(false);
-  const displayName = user?.fullName ?? "Người dùng";
+  const displayName = user?.fullName ?? "User";
   const initials = displayName
     .split(" ")
     .map((part) => part[0])
@@ -105,7 +105,7 @@ function UserMenu({ user, onLogout }) {
             className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
           >
             <LogOut size={16} />
-            <span>Đăng xuất</span>
+            <span>Sign Out</span>
           </button>
         </div>
       )}

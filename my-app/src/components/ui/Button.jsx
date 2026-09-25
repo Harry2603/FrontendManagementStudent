@@ -18,7 +18,7 @@ export default function Button({
       disabled={disabled || loading}
       className={`w-full rounded py-2 font-medium transition-colors ${VARIANT_CLASS[variant]}`}
     >
-      {loading ? "Đang xử lý..." : children}
+      {loading ? "Processing..." : children}
     </button>
   );
 }

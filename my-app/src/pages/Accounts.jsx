@@ -43,7 +43,7 @@ export default function Accounts() {
         if (!ignore) setUsers(res.items ?? []);
       })
       .catch(() => {
-        if (!ignore) setError("Không tải được danh sách user.");
+        if (!ignore) setError("Unable to load the user list.");
       })
       .finally(() => {
         if (!ignore) setLoading(false);
@@ -93,7 +93,7 @@ export default function Accounts() {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold text-gray-900">
-        Quản lý tài khoản
+        Account Management
       </h1>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -106,7 +106,7 @@ export default function Accounts() {
         <div className="flex flex-wrap items-center gap-3">
           <input
             type="text"
-            placeholder="Tìm theo tên hoặc email..."
+            placeholder="Search by name or email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-600"
@@ -126,7 +126,7 @@ export default function Accounts() {
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       {loading ? (
-        <p className="text-sm text-gray-500">Đang tải...</p>
+        <p className="text-sm text-gray-500">Loading...</p>
       ) : (
         <Table
           columns={COLUMNS}
