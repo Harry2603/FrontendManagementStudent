@@ -14,8 +14,8 @@ import { getAvatarSrc, useDefaultAvatarOnError } from "@/utils/avatar";
 const getLinkClass = ({ isActive }) =>
   `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
     isActive
-      ? "bg-indigo-600 text-white"
-      : "text-slate-300 hover:bg-slate-800 hover:text-white"
+      ? "bg-red-50 text-red-700"
+      : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
   }`;
 
 // Sidebar chỉ render lại khi `role` đổi (đăng nhập/đăng xuất), không phụ thuộc nội dung page
@@ -26,7 +26,7 @@ const Sidebar = memo(function Sidebar({ role, isOpen, onToggle }) {
 
   return (
     <aside
-      className={`flex shrink-0 flex-col border-r border-slate-800 bg-slate-900 transition-[width] duration-200 ${
+      className={`flex shrink-0 flex-col border-r border-slate-200 bg-white transition-[width] duration-200 ${
         isOpen ? "w-64" : "w-20"
       }`}
     >
@@ -35,13 +35,18 @@ const Sidebar = memo(function Sidebar({ role, isOpen, onToggle }) {
           isOpen ? "justify-between px-4" : "justify-center"
         }`}
       >
-        {isOpen && <span className="text-lg font-bold text-white">My App</span>}
+        {isOpen && (
+          <div
+            aria-label="Logo placeholder"
+            className="flex h-10 w-44 items-center justify-center rounded-md border-2 border-dashed border-slate-300 bg-slate-50"
+          />
+        )}
         <button
           type="button"
           onClick={onToggle}
           aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
           title={isOpen ? "Collapse sidebar" : "Expand sidebar"}
-          className="rounded-lg p-2 text-slate-300 hover:bg-slate-800 hover:text-white"
+          className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
         >
           {isOpen ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
         </button>
