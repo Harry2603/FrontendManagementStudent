@@ -78,7 +78,7 @@ export default function AnnouncementForm({
             disabled={!isTeacher}
             className="w-full rounded border border-gray-300 px-3 py-2 outline-none focus:border-blue-600 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
           >
-            <option value="">Tất cả course section</option>
+            <option value="">All course sections</option>
             {sections.map((section) => (
               <option key={section.id} value={section.id}>
                 {section.sectionCode}
