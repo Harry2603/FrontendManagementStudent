@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { BookOpenCheck, CheckCircle2, CircleAlert, GraduationCap } from "lucide-react";
+import {
+  BookOpenCheck,
+  CheckCircle2,
+  CircleAlert,
+  GraduationCap,
+} from "lucide-react";
 import PageLoader from "@/components/common/PageLoader";
 import { transcriptService } from "@/features/transcript/services/transcriptService";
 
@@ -13,7 +18,11 @@ const formatCredits = (credits) =>
   Number.isFinite(Number(credits)) ? Number(credits) : "_";
 
 const SCORE_COLUMNS = [
-  { key: "attendance", label: "Attendance", terms: ["attendance", "chuyên cần"] },
+  {
+    key: "attendance",
+    label: "Attendance",
+    terms: ["attendance", "chuyên cần"],
+  },
   { key: "midterm", label: "Midterm", terms: ["midterm", "giữa kỳ"] },
   { key: "lab", label: "Lab", terms: ["lab", "thực hành"] },
   { key: "final", label: "Final", terms: ["final", "cuối kỳ"] },
@@ -193,13 +202,13 @@ export default function Transcript() {
           Academic
         </p>
         <h1 className="mt-1 text-3xl font-bold text-slate-900">Transcript</h1>
-        <p className="mt-2 text-slate-600">
-          Review your course results by academic year.
-        </p>
       </div>
 
       {gpaError ? (
-        <p role="alert" className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-700">
+        <p
+          role="alert"
+          className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-700"
+        >
           {gpaError}
         </p>
       ) : null}
@@ -207,7 +216,9 @@ export default function Transcript() {
       {academicYears.length === 0 ? (
         <div className="rounded-xl bg-white px-6 py-14 text-center shadow-sm ring-1 ring-slate-200">
           <BookOpenCheck className="mx-auto text-slate-400" size={32} />
-          <h2 className="mt-3 font-semibold text-slate-900">No course results yet</h2>
+          <h2 className="mt-3 font-semibold text-slate-900">
+            No course results yet
+          </h2>
           <p className="mt-1 text-sm text-slate-500">
             Your transcript will appear once results are published.
           </p>
@@ -229,7 +240,8 @@ export default function Transcript() {
                     {year.semesters.reduce(
                       (total, semester) => total + semester.items.length,
                       0,
-                    )} courses
+                    )}{" "}
+                    courses
                   </p>
                 </div>
               </div>
@@ -239,10 +251,16 @@ export default function Transcript() {
                 return gpaYear ? (
                   <div className="flex items-center gap-4 text-sm">
                     <span className="text-slate-500">
-                      Cumulative GPA: <strong className="text-blue-600">{formatScore(gpaYear.cumulativeGpa)}</strong>
+                      Cumulative GPA:{" "}
+                      <strong className="text-blue-600">
+                        {formatScore(gpaYear.cumulativeGpa)}
+                      </strong>
                     </span>
                     <span className="text-slate-500">
-                      Cumulative credits: <strong className="text-slate-700">{formatCredits(gpaYear.cumulativeCompletedCredits)}</strong>
+                      Cumulative credits:{" "}
+                      <strong className="text-slate-700">
+                        {formatCredits(gpaYear.cumulativeCompletedCredits)}
+                      </strong>
                     </span>
                   </div>
                 ) : null;
@@ -262,12 +280,17 @@ export default function Transcript() {
                           <th className="px-4 py-3">Course</th>
                           <th className="px-4 py-3 text-center">Credits</th>
                           {SCORE_COLUMNS.map((column) => (
-                            <th key={column.key} className="px-4 py-3 text-center">
+                            <th
+                              key={column.key}
+                              className="px-4 py-3 text-center"
+                            >
                               {column.label}
                             </th>
                           ))}
                           <th className="px-4 py-3 text-center">Final score</th>
-                          <th className="px-4 py-3 text-center">Letter grade</th>
+                          <th className="px-4 py-3 text-center">
+                            Letter grade
+                          </th>
                           <th className="px-4 py-3 text-center">GPA</th>
                           <th className="px-4 py-3 text-center">Result</th>
                         </tr>
@@ -277,10 +300,13 @@ export default function Transcript() {
                           const result = item.finalResult;
 
                           return (
-                            <tr key={item.enrollmentId} className="hover:bg-slate-50">
+                            <tr
+                              key={item.enrollmentId}
+                              className="hover:bg-slate-50"
+                            >
                               <td className="px-4 py-3 text-sm">
                                 <p className="font-semibold text-blue-600">
-                                {item.courseCode ?? item.sectionCode ?? "_"}
+                                  {item.courseCode ?? item.sectionCode ?? "_"}
                                 </p>
                                 <p className="mt-0.5 text-slate-700">
                                   {item.courseName ?? "_"}
@@ -292,7 +318,7 @@ export default function Transcript() {
                               <td className="px-4 py-3 text-center text-sm text-slate-700">
                                 {item.credits ?? "_"}
                               </td>
-                              {SCORE_COLUMNS.map((column) => (
+                              {SCORE_COLUMNS.map((column) =>
                                 (() => {
                                   const component = getComponent(
                                     item.componentScores,
@@ -316,8 +342,8 @@ export default function Transcript() {
                                       )}
                                     </td>
                                   );
-                                })()
-                              ))}
+                                })(),
+                              )}
                               <td className="px-4 py-3 text-center text-sm font-semibold text-slate-800">
                                 {formatTenPointScore(result?.finalScore)}
                               </td>
@@ -337,15 +363,25 @@ export default function Transcript() {
                     </table>
                   </div>
                   {(() => {
-                    const gpaSemester = getGpaSemester(gpaYears, year, semester);
+                    const gpaSemester = getGpaSemester(
+                      gpaYears,
+                      year,
+                      semester,
+                    );
 
                     return gpaSemester ? (
                       <div className="mt-3 flex flex-wrap justify-end gap-x-5 gap-y-1 text-sm">
                         <span className="text-slate-500">
-                          GPA: <strong className="text-blue-600">{formatScore(gpaSemester.gpa)}</strong>
+                          GPA:{" "}
+                          <strong className="text-blue-600">
+                            {formatScore(gpaSemester.gpa)}
+                          </strong>
                         </span>
                         <span className="text-slate-500">
-                          Completed credits: <strong className="text-slate-700">{formatCredits(gpaSemester.completedCredits)}</strong>
+                          Completed credits:{" "}
+                          <strong className="text-slate-700">
+                            {formatCredits(gpaSemester.completedCredits)}
+                          </strong>
                         </span>
                       </div>
                     ) : null;

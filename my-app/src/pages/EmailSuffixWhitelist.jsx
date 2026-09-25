@@ -18,8 +18,12 @@ const formatDateTime = (value) => {
 };
 
 const getDeleteError = (error) => {
-  if (!error.response) return "Unable to connect to the server. Please try again.";
-  return error.response.data?.message || "Unable to delete the email suffix. Please try again.";
+  if (!error.response)
+    return "Unable to connect to the server. Please try again.";
+  return (
+    error.response.data?.message ||
+    "Unable to delete the email suffix. Please try again."
+  );
 };
 
 const buildColumns = ({ deletingRuleId, onDelete }) => [
@@ -62,9 +66,14 @@ const buildColumns = ({ deletingRuleId, onDelete }) => [
 ];
 
 const getRequestError = (error) => {
-  if (!error.response) return "Unable to connect to the server. Please try again.";
-  if (error.response.status === 409) return "This email suffix is already approved.";
-  return error.response.data?.message || "Unable to add the email suffix. Please try again.";
+  if (!error.response)
+    return "Unable to connect to the server. Please try again.";
+  if (error.response.status === 409)
+    return "This email suffix is already approved.";
+  return (
+    error.response.data?.message ||
+    "Unable to add the email suffix. Please try again."
+  );
 };
 
 export default function EmailSuffixWhitelist() {
@@ -147,7 +156,8 @@ export default function EmailSuffixWhitelist() {
 
   const handleDelete = async (rule) => {
     const suffixLabel = rule.suffix || "this email suffix";
-    if (!window.confirm(`Remove ${suffixLabel} from the approved suffixes?`)) return;
+    if (!window.confirm(`Remove ${suffixLabel} from the approved suffixes?`))
+      return;
 
     setFormError("");
     setSuccessMessage("");
@@ -177,18 +187,23 @@ export default function EmailSuffixWhitelist() {
             <h1 className="text-2xl font-semibold text-slate-900">
               Email Suffix Whitelist
             </h1>
-            <p className="mt-1 text-sm text-slate-600">
-              Allow students to register with approved email domains only.
-            </p>
           </div>
         </div>
       </div>
 
       <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-base font-semibold text-slate-900">Add approved suffix</h2>
-        <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-start">
+        <h2 className="text-base font-semibold text-slate-900">
+          Add approved suffix
+        </h2>
+        <form
+          onSubmit={handleSubmit}
+          className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-start"
+        >
           <div className="flex-1">
-            <label htmlFor="email-suffix" className="mb-1 block text-sm font-medium text-slate-700">
+            <label
+              htmlFor="email-suffix"
+              className="mb-1 block text-sm font-medium text-slate-700"
+            >
               Email suffix
             </label>
             <input
@@ -206,8 +221,12 @@ export default function EmailSuffixWhitelist() {
             <p id="email-suffix-help" className="mt-1 text-xs text-slate-500">
               Include the @ symbol, for example @example.edu.
             </p>
-            {formError && <p className="mt-1 text-sm text-red-600">{formError}</p>}
-            {successMessage && <p className="mt-1 text-sm text-green-700">{successMessage}</p>}
+            {formError && (
+              <p className="mt-1 text-sm text-red-600">{formError}</p>
+            )}
+            {successMessage && (
+              <p className="mt-1 text-sm text-green-700">{successMessage}</p>
+            )}
           </div>
           <button
             type="submit"
@@ -221,7 +240,9 @@ export default function EmailSuffixWhitelist() {
       </section>
 
       <section>
-        <h2 className="mb-3 text-base font-semibold text-slate-900">Approved suffixes</h2>
+        <h2 className="mb-3 text-base font-semibold text-slate-900">
+          Approved suffixes
+        </h2>
         {loadError && <p className="mb-3 text-sm text-red-600">{loadError}</p>}
         {loading ? (
           <p className="text-sm text-slate-500">Loading approved suffixes...</p>

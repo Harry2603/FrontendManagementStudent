@@ -353,9 +353,7 @@ export default function EnrollmentPage() {
         <h1 className="mt-1 text-3xl font-bold text-slate-900">
           Course Registration
         </h1>
-        <p className="mt-2 text-slate-600">
-          Manage your course sections for the current semester.
-        </p>
+
       </div>
 
       <div className="border-b border-slate-200">

@@ -220,9 +220,6 @@ export default function FaceManagement() {
         </div>
         <div>
           <h2 className="text-xl font-semibold text-slate-900">Face ID</h2>
-          <p className="mt-1 text-sm text-slate-600">
-            Use your face to sign in to your student account.
-          </p>
         </div>
       </div>
 
