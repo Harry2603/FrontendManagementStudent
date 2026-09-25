@@ -14,7 +14,6 @@ import {
   HomePage,
   ProfilePage,
   UsersPage,
-  SettingsPage,
   NotFound,
   AccountsPage,
   EnrollmentPage,
@@ -58,7 +57,7 @@ export const routeConfig = [
     path: "/accounts",
     Component: AccountsPage,
     access: "private",
-    roles: [ROLES.ADMIN, ROLES.TEACHER],
+    roles: [ROLES.ADMIN],
     menu: {
       label: "Account Management",
       icon: Users,
@@ -126,16 +125,16 @@ export const routeConfig = [
     },
   },
 
-  {
-    path: "/settings",
-    Component: SettingsPage,
-    access: "private",
-    roles: [ROLES.STUDENT, ROLES.TEACHER, ROLES.ADMIN],
-    menu: {
-      label: "Settings",
-      icon: Settings,
-    },
-  },
+  // {
+  //   path: "/settings",
+  //   Component: SettingsPage,
+  //   access: "private",
+  //   roles: [ROLES.STUDENT, ROLES.TEACHER, ROLES.ADMIN],
+  //   menu: {
+  //     label: "Settings",
+  //     icon: Settings,
+  //   },
+  // },
 
   {
     path: "*",
