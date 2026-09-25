@@ -137,13 +137,9 @@ export default function Scheduler() {
     <section className="mx-auto max-w-7xl space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-red-600">
-            Academic planner
-          </p>
+          
           <h1 className="mt-1 text-3xl font-bold text-slate-900">Schedule</h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Your timetable for the current semester.
-          </p>
+         
         </div>
         <div className="flex items-center justify-end gap-2">
           <button
@@ -171,7 +167,7 @@ export default function Scheduler() {
               className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-100"
             >
               <Calendar size={17} />
-              Chọn ngày
+              Select Date
             </button>
             {isDatePickerOpen && (
               <div className="absolute right-0 top-full z-10 mt-2 rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
