@@ -8,6 +8,7 @@ import {
  BookPlusIcon,
   GraduationCap,
   CalendarDays,
+  MailCheck,
 } from "lucide-react";
 import { ROLES } from "@/config/constants";
 import {
@@ -26,6 +27,7 @@ import {
   AnnouncementCenterPage,
   TeacherCourseSectionPage,
   SchedulerPage,
+  EmailSuffixWhitelistPage,
 } from "./pageComponents";
 
 export const routeConfig = [
@@ -65,6 +67,16 @@ export const routeConfig = [
     menu: {
       label: "Account Management",
       icon: Users,
+    },
+  },
+  {
+    path: "/email-suffix-whitelist",
+    Component: EmailSuffixWhitelistPage,
+    access: "private",
+    roles: [ROLES.ADMIN],
+    menu: {
+      label: "Email Suffix Whitelist",
+      icon: MailCheck,
     },
   },
   {
