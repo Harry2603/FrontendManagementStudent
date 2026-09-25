@@ -37,9 +37,11 @@ const Sidebar = memo(function Sidebar({ role, isOpen, onToggle }) {
       >
         {isOpen && (
           <div
-            aria-label="Logo placeholder"
-            className="flex h-10 w-44 items-center justify-center rounded-md border-2 border-dashed border-slate-300 bg-slate-50"
-          />
+            aria-label="MsSystem"
+            className="flex h-10 w-44 items-center justify-center text-lg font-bold text-red-600"
+          >
+            MsSystem
+          </div>
         )}
         <button
           type="button"
@@ -145,6 +147,7 @@ export default function Layout() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-16 shrink-0 items-center justify-end border-b border-slate-200 bg-white px-6">
+          {/* <img src={logo} alt="Logo" className="h-9 w-auto" /> */}
           <UserMenu user={user} onLogout={logout} />
         </header>
         <main className="flex-1 overflow-y-auto p-6">
