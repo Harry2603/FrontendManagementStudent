@@ -30,42 +30,51 @@ export default function AnnouncementList({
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4">
-      <h2 className="mb-3 text-lg font-semibold text-gray-900">Announcements</h2>
+      <h2 className="mb-3 text-lg font-semibold text-gray-900">
+        Announcements
+      </h2>
 
       {isLoading ? (
-        <p className="text-sm text-gray-400">Loading...</p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div
+              key={index}
+              className="h-36 animate-pulse rounded-2xl border border-gray-100 bg-gray-50"
+            />
+          ))}
+        </div>
       ) : items.length === 0 ? (
         <p className="text-sm text-gray-400">No announcements yet.</p>
       ) : (
-        <ul className="space-y-3">
+        <div className="grid gap-4 sm:grid-cols-1">
           {items.map((item) => (
-            <li
+            <button
               key={item.id}
-              className="border-b border-gray-100 pb-3 last:border-0"
+              type="button"
+              onClick={() => onSelect(item)}
+              className="flex min-w-0 cursor-pointer flex-col items-start rounded-2xl border border-gray-100 p-5 text-left shadow-sm transition-shadow hover:shadow-md"
             >
-              <button
-                type="button"
-                onClick={() => onSelect(item)}
-                className="block w-full min-w-0 text-left hover:bg-gray-50"
-              >
-                <div className="flex min-w-0 items-center justify-between gap-3">
-                  <h3 className="min-w-0 truncate font-medium text-gray-900">
-                    {item.title}
-                  </h3>
-                  <CreatorBadge role={item.user?.role} />
-                </div>
-                <p className="mt-1 line-clamp-2 break-words text-sm text-gray-600">
-                  {item.content}
-                </p>
-                <div className="mt-1 flex items-center gap-2 text-xs text-gray-400">
-                  <span>{item.user?.fullName ?? "Anonymous"}</span>
-                  <span>•</span>
-                  <span>{formatDate(item.createdAt)}</span>
-                </div>
-              </button>
-            </li>
+              <div className="flex w-full min-w-0 items-center justify-between gap-3">
+                <CreatorBadge role={item.user?.role} />
+                <span className="whitespace-nowrap text-sm font-semibold text-blue-600">
+                  {formatDate(item.createdAt)}
+                </span>
+              </div>
+
+              <h3 className="mt-3 line-clamp-1 w-full text-lg font-bold text-gray-900">
+                {item.title}
+              </h3>
+
+              <p className="mt-2 line-clamp-2 w-full break-words text-sm leading-6 text-gray-600">
+                {item.content}
+              </p>
+
+              <span className="mt-4 inline-flex items-center rounded-md bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
+                {item.user?.fullName ?? "Anonymous"}
+              </span>
+            </button>
           ))}
-        </ul>
+        </div>
       )}
 
       {totalPages > 1 && (
